@@ -28,6 +28,9 @@ jobs:
         - name: Install Build Script Dependencies
           run: rm package.json package-lock.json && npm install zx js-yaml lodash
 
+        - name: Pre-Build
+          run: npm run prebuild
+        
         - name: Build image
           run: docker build --platform linux/amd64 -t boxyhq/jackson:latest .
 
