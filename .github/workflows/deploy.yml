@@ -13,32 +13,26 @@ permissions:
 
 jobs:
     deploy:
-        name: Deploy Application
-        runs-on: ubuntu-latest
-        environment: ${{ github.ref_name }}
-        steps:
+      name: Deploy Application
+      runs-on: ubuntu-latest
+      environment: ${{ github.ref_name }}
+      steps:
         - name: Checkout the repo
-            uses: actions/checkout@v3
+          uses: actions/checkout@v3
 
         - name: Install doctl
-            uses: digitalocean/action-doctl@v2
-            with:
+          uses: digitalocean/action-doctl@v2
+          with:
             token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
         - name: Install Build Script Dependencies
-            run: rm package.json package-lock.json && npm install zx js-yaml lodash
-
-        - name: Review app spec
-            run: npx zx ./scripts/do.apps.construct-spec.mjs --target=${{ steps.set_params.outputs.TARGET }} --aws_region=${{ secrets.AWS_REGION}} --aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }} --aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          run: rm package.json package-lock.json && npm install zx js-yaml lodash
 
         - name: Build image
-            run: |
-            docker build --platform linux/amd64 -t boxyhq/jackson:latest .
+          run: docker build --platform linux/amd64 -t boxyhq/jackson:latest .
 
         - name: Tag image
-            run: |
-            docker tag boxyhq/jackson:latest registry.digitalocean.com/auditive/auditive-sso:latest
+          run: docker tag boxyhq/jackson:latest registry.digitalocean.com/auditive/auditive-sso:latest
 
         - name: Push image
-            run: |
-            docker push registry.digitalocean.com/auditive/auditive-sso:latest
+          run: docker push registry.digitalocean.com/auditive/auditive-sso:latest
