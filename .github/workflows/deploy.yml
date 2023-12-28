@@ -25,8 +25,8 @@ jobs:
           with:
             token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-        - name: Install Build Script Dependencies
-          run: rm package.json package-lock.json && npm install zx js-yaml lodash
+        # - name: Install Build Script Dependencies
+        # run: rm package.json package-lock.json && npm install zx js-yaml lodash
 
         - name: Pre-Build
           run: npm run prebuild
