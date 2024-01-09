@@ -1,5 +1,5 @@
 import type { JWK } from 'jose';
-import type { IssuerMetadata } from 'openid-client';
+import type { CallbackParamsType, IssuerMetadata } from 'openid-client';
 
 export * from './ee/federated-saml/types';
 export * from './saml-tracer/types';
@@ -176,7 +176,7 @@ export interface IOAuthController {
   samlResponse(
     body: SAMLResponsePayload
   ): Promise<{ redirect_url?: string; app_select_form?: string; response_form?: string }>;
-  oidcAuthzResponse(body: OIDCAuthzResponsePayload): Promise<{ redirect_url?: string }>;
+  oidcAuthzResponse(body: CallbackParamsType): Promise<{ redirect_url?: string }>;
   token(body: OAuthTokenReq): Promise<OAuthTokenRes>;
   userInfo(token: string): Promise<Profile>;
 }
@@ -264,22 +264,6 @@ export interface SAMLResponsePayload {
   idp_hint?: string;
 }
 
-interface OIDCAuthzResponseSuccess {
-  code: string;
-  state: string;
-  error?: never;
-  error_description?: never;
-}
-
-interface OIDCAuthzResponseError {
-  code?: never;
-  state: string;
-  error: OAuthErrorHandlerParams['error'] | OIDCErrorCodes;
-  error_description?: string;
-}
-
-export type OIDCAuthzResponsePayload = OIDCAuthzResponseSuccess | OIDCAuthzResponseError;
-
 interface OAuthTokenReqBody {
   code: string;
   grant_type: 'authorization_code';
@@ -350,6 +334,7 @@ export interface DatabaseDriver {
     sortOrder?: SortOrder
   ): Promise<Records>;
   deleteMany(namespace: string, keys: string[]): Promise<void>;
+  close(): Promise<void>;
 }
 
 export interface Storable {
@@ -449,6 +434,9 @@ export interface JacksonOption {
       };
     };
   };
+
+  /**  The number of days a setup link is valid for. Defaults to 3 days. */
+  setupLinkExpiryDays?: number;
 }
 
 export interface SLORequestParams {
@@ -534,6 +522,7 @@ export type SetupLinkCreatePayload = {
   redirectUrl?: string;
   service: SetupLinkService;
   regenerate?: boolean;
+  expiryDays?: number;
 };
 
 export type SetupLink = {
@@ -578,9 +567,13 @@ export type GetByProductParams = {
 
 export type SortOrder = 'ASC' | 'DESC';
 
-export type Product = {
+export interface ProductConfig {
   id: string;
-  name: string;
-  teamId: string;
-  teamName: string;
-};
+  name: string | null;
+  teamId: string | null;
+  teamName: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  faviconUrl: string | null;
+  companyName: string | null;
+}
