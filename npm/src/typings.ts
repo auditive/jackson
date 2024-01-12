@@ -176,7 +176,7 @@ export interface IOAuthController {
   samlResponse(
     body: SAMLResponsePayload
   ): Promise<{ redirect_url?: string; app_select_form?: string; response_form?: string }>;
-  oidcAuthzResponse(body: CallbackParamsType): Promise<{ redirect_url?: string }>;
+  oidcAuthzResponse(body: OIDCAuthzResponsePayload): Promise<{ redirect_url?: string }>;
   token(body: OAuthTokenReq): Promise<OAuthTokenRes>;
   userInfo(token: string): Promise<Profile>;
 }
@@ -264,6 +264,8 @@ export interface SAMLResponsePayload {
   idp_hint?: string;
 }
 
+export type OIDCAuthzResponsePayload = CallbackParamsType;
+
 interface OAuthTokenReqBody {
   code: string;
   grant_type: 'authorization_code';
@@ -333,6 +335,7 @@ export interface DatabaseDriver {
     pageToken?: string,
     sortOrder?: SortOrder
   ): Promise<Records>;
+  getCount?(namespace: string, idx?: Index): Promise<number | undefined>;
   deleteMany(namespace: string, keys: string[]): Promise<void>;
   close(): Promise<void>;
 }
@@ -354,6 +357,7 @@ export interface Storable {
     pageToken?: string,
     sortOrder?: SortOrder
   ): Promise<Records>;
+  getCount(idx?: Index): Promise<number | undefined>;
   deleteMany(keys: string[]): Promise<void>;
 }
 
