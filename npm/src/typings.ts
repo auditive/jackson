@@ -2,7 +2,7 @@ import type { JWK } from 'jose';
 import type { CallbackParamsType, IssuerMetadata } from 'openid-client';
 
 export * from './ee/federated-saml/types';
-export * from './saml-tracer/types';
+export * from './sso-tracer/types';
 export * from './directory-sync/types';
 export * from './event/types';
 
@@ -10,13 +10,26 @@ import db from './db/db';
 
 export type DB = Awaited<ReturnType<typeof db.new>>;
 
-interface SSOConnection {
+export interface OryRes {
+  projectId?: string;
+  domains?: string[];
+  organizationId?: string;
+  error: any | undefined;
+}
+
+export interface OryConfig extends OryRes {
+  sdkToken?: string;
+}
+
+export interface SSOConnection {
   defaultRedirectUrl: string;
   redirectUrl: string[] | string;
   tenant: string;
   product: string;
   name?: string;
+  label?: string;
   description?: string;
+  ory?: OryConfig;
 }
 
 export interface SAMLSSOConnection extends SSOConnection {
@@ -83,8 +96,8 @@ export interface OIDCSSORecord extends SSOConnection {
     friendlyProviderName: string | null;
     discoveryUrl?: string;
     metadata?: IssuerMetadata;
-    clientId?: string;
-    clientSecret?: string;
+    clientId: string;
+    clientSecret: string;
   };
   deactivated?: boolean;
 }
@@ -117,10 +130,12 @@ export type UpdateConnectionParams = TenantProduct & {
   clientID: string;
   clientSecret: string;
   name?: string;
+  label?: string;
   description?: string;
   defaultRedirectUrl?: string;
   redirectUrl?: string[] | string;
   deactivated?: boolean;
+  ory?: OryConfig;
 };
 
 export type UpdateSAMLConnectionParams = UpdateConnectionParams & {
@@ -177,15 +192,17 @@ export interface IOAuthController {
   samlResponse(
     body: SAMLResponsePayload
   ): Promise<{ redirect_url?: string; app_select_form?: string; response_form?: string }>;
-  oidcAuthzResponse(body: OIDCAuthzResponsePayload): Promise<{ redirect_url?: string }>;
+  oidcAuthzResponse(
+    body: OIDCAuthzResponsePayload
+  ): Promise<{ redirect_url?: string; response_form?: string }>;
   token(body: OAuthTokenReq): Promise<OAuthTokenRes>;
   userInfo(token: string): Promise<Profile>;
 }
 
 export interface IAdminController {
   getAllConnection(pageOffset?: number, pageLimit?: number, pageToken?: string);
-  getAllSAMLTraces(pageOffset: number, pageLimit: number, pageToken?: string);
-  getSAMLTraceById(traceId: string);
+  getAllSSOTraces(pageOffset: number, pageLimit: number, pageToken?: string);
+  getSSOTraceById(traceId: string);
   getTracesByProduct(product: string, pageOffset: number, pageLimit: number, pageToken?: string);
 }
 
@@ -442,6 +459,12 @@ export interface JacksonOption {
 
   /**  The number of days a setup link is valid for. Defaults to 3 days. */
   setupLinkExpiryDays?: number;
+  boxyhqHosted?: boolean;
+
+  ory: {
+    projectId: string | undefined;
+    sdkToken: string | undefined;
+  };
 }
 
 export interface SLORequestParams {
@@ -581,4 +604,5 @@ export interface ProductConfig {
   primaryColor: string | null;
   faviconUrl: string | null;
   companyName: string | null;
+  ory: OryConfig | null;
 }

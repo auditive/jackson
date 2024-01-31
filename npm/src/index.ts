@@ -16,9 +16,10 @@ import * as x509 from './saml/x509';
 import initFederatedSAML, { type ISAMLFederationController } from './ee/federated-saml';
 import checkLicense from './ee/common/checkLicense';
 import { BrandingController } from './ee/branding';
-import SAMLTracer from './saml-tracer';
+import SSOTracer from './sso-tracer';
 import EventController from './event';
 import { ProductController } from './ee/product';
+import { OryController } from './ee/ory/ory';
 
 const defaultOpts = (opts: JacksonOption): JacksonOption => {
   const newOpts = {
@@ -87,15 +88,21 @@ export const controllers = async (
   const settingsStore = db.store('portal:settings');
   const productStore = db.store('product:config');
 
-  const samlTracer = new SAMLTracer({ db });
+  const ssoTracer = new SSOTracer({ db });
   const eventController = new EventController({ opts });
+  const productController = new ProductController({ productStore, opts });
 
-  const connectionAPIController = new ConnectionAPIController({ connectionStore, opts, eventController });
-  const adminController = new AdminController({ connectionStore, samlTracer });
+  const oryController = new OryController({ opts, productController });
+  const connectionAPIController = new ConnectionAPIController({
+    connectionStore,
+    opts,
+    eventController,
+    oryController,
+  });
+  const adminController = new AdminController({ connectionStore, ssoTracer });
   const healthCheckController = new HealthCheckController({ healthCheckStore });
   await healthCheckController.init();
   const setupLinkController = new SetupLinkController({ setupLinkStore, opts });
-  const productController = new ProductController({ productStore, opts });
 
   // Create default certificate if it doesn't exist.
   await x509.init(certificateStore, opts);
@@ -105,7 +112,7 @@ export const controllers = async (
     sessionStore,
     codeStore,
     tokenStore,
-    samlTracer,
+    ssoTracer,
     opts,
   });
 
@@ -120,7 +127,7 @@ export const controllers = async (
   const directorySyncController = await initDirectorySync({ db, opts, eventController });
 
   // Enterprise Features
-  const samlFederatedController = await initFederatedSAML({ db, opts, samlTracer });
+  const samlFederatedController = await initFederatedSAML({ db, opts, ssoTracer });
   const brandingController = new BrandingController({ store: settingsStore, opts });
 
   // write pre-loaded connections if present
