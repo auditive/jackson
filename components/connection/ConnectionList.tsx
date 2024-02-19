@@ -1,6 +1,5 @@
 import LinkIcon from '@heroicons/react/24/outline/LinkIcon';
 import PencilIcon from '@heroicons/react/24/outline/PencilIcon';
-import PlusIcon from '@heroicons/react/24/outline/PlusIcon';
 import EmptyState from '@components/EmptyState';
 import { useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
@@ -74,10 +73,11 @@ const ConnectionList = ({
   const noConnections = connections.length === 0 && paginate.offset === 0;
   const noMoreResults = connections.length === 0 && paginate.offset > 0;
 
-  if (connections && setupLinkToken && connections.length === 0) {
-    router.replace(`/setup/${setupLinkToken}/sso-connection/new`);
-    return null;
-  }
+  // TODO: Redirect to create a new connection if there are no connections
+  // if (connections && setupLinkToken && connections.length === 0) {
+  //   router.replace(`/setup/${setupLinkToken}/sso-connection/new`);
+  //   return null;
+  // }
 
   // Find the display name for a connection
   const connectionDisplayName = (connection: SAMLSSORecord | OIDCSSORecord) => {
@@ -103,9 +103,6 @@ const ConnectionList = ({
           {t(isSettingsView ? 'admin_portal_sso' : 'enterprise_sso')}
         </h2>
         <div className='flex gap-2'>
-          <LinkPrimary Icon={PlusIcon} href={createConnectionUrl} data-testid='create-connection'>
-            {t('new_connection')}
-          </LinkPrimary>
           {!setupLinkToken && !isSettingsView && (
             <LinkPrimary
               Icon={LinkIcon}
@@ -114,6 +111,9 @@ const ConnectionList = ({
               {t('new_setup_link')}
             </LinkPrimary>
           )}
+          <LinkPrimary href={createConnectionUrl} data-testid='create-connection'>
+            {t('new_connection')}
+          </LinkPrimary>
         </div>
       </div>
       {idpEntityID && setupLinkToken && (
@@ -164,7 +164,7 @@ const ConnectionList = ({
                     <tr
                       key={connection.clientID}
                       className='border-b bg-white last:border-b-0 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800'>
-                      <td className='whitespace-nowrap px-6 py-3 text-sm text-gray-500 dark:text-gray-400'>
+                      <td className='break-all px-6 py-3 text-sm text-gray-500 dark:text-gray-400'>
                         {connectionDisplayName(connection)}
                         {isSystemSSO && (
                           <Badge
@@ -178,12 +178,8 @@ const ConnectionList = ({
                       </td>
                       {displayTenantProduct && (
                         <>
-                          <td className='whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900 dark:text-white'>
-                            {connection.tenant}
-                          </td>
-                          <td className='whitespace-nowrap px-6 py-3 text-sm text-gray-500 dark:text-gray-400'>
-                            {connection.product}
-                          </td>
+                          <td className='break-all px-6 py-3'>{connection.tenant}</td>
+                          <td className='break-all px-6 py-3'>{connection.product}</td>
                         </>
                       )}
                       <td className='px-6 py-3'>

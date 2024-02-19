@@ -5,13 +5,12 @@ import { deflateRaw } from 'zlib';
 import type { SAMLProfile } from '@boxyhq/saml20/dist/typings';
 import { generators } from 'openid-client';
 
-import type { JacksonOption, Storable, SAMLSSORecord, OIDCSSORecord } from '../typings';
+import type { JacksonOption, Storable, SAMLSSORecord, OIDCSSORecord, AttributeMapping } from '../typings';
 import { getDefaultCertificate } from '../saml/x509';
 import * as dbutils from '../db/utils';
 import { JacksonError } from './error';
 import { IndexNames } from './utils';
 import { relayStatePrefix } from './utils';
-import { createSAMLResponse } from '../saml/lib';
 import * as redirect from './oauth/redirect';
 import { oidcIssuerInstance } from './oauth/oidc-issuer';
 
@@ -41,7 +40,7 @@ export class SSOHandler {
   // If there is only one connection, return the connection
   async resolveConnection(params: {
     authFlow: 'oauth' | 'saml' | 'idp-initiated';
-    originalParams: Record<string, string>;
+    originalParams: Record<string, any>;
     tenant?: string;
     product?: string;
     entityId?: string;
@@ -159,9 +158,11 @@ export class SSOHandler {
   async createSAMLRequest({
     connection,
     requestParams,
+    mappings,
   }: {
     connection: SAMLSSORecord;
     requestParams: Record<string, any>;
+    mappings: AttributeMapping[] | null;
   }) {
     // We have a connection now, so we can create the SAML request
     const certificate = await getDefaultCertificate();
@@ -196,6 +197,7 @@ export class SSOHandler {
         ...requestParams,
         client_id: connection.clientID,
       },
+      mappings,
     });
 
     let redirectUrl;
@@ -229,9 +231,11 @@ export class SSOHandler {
   async createOIDCRequest({
     connection,
     requestParams,
+    mappings,
   }: {
     connection: OIDCSSORecord;
     requestParams: Record<string, any>;
+    mappings: AttributeMapping[] | null;
   }) {
     if (!this.opts.oidcPath) {
       throw new JacksonError('OpenID response handler path (oidcPath) is not set', 400);
@@ -257,6 +261,7 @@ export class SSOHandler {
         requested: requestParams,
         oidcCodeVerifier,
         oidcNonce,
+        mappings,
       });
 
       const ssoUrl = oidcClient.authorizationUrl({
@@ -269,6 +274,7 @@ export class SSOHandler {
 
       return {
         redirect_url: ssoUrl,
+        authorize_form: null,
       };
     } catch (err: any) {
       console.error(err);
@@ -279,14 +285,30 @@ export class SSOHandler {
   createSAMLResponse = async ({ profile, session }: { profile: SAMLProfile; session: any }) => {
     const certificate = await getDefaultCertificate();
 
+    const mappedClaims = profile.claims;
+    if (session.mappings) {
+      session.mappings.forEach((elem) => {
+        const key = elem.key;
+        const value = elem.value;
+        if (mappedClaims.raw[value]) {
+          mappedClaims.raw[key] = mappedClaims.raw[value];
+        }
+      });
+      session.mappings.forEach((elem) => {
+        const value = elem.value;
+        delete mappedClaims.raw[value];
+      });
+    }
+
     try {
-      const responseSigned = await createSAMLResponse({
+      const responseSigned = await saml.createSAMLResponse({
         audience: session.requested.entityId,
         acsUrl: session.requested.acsUrl,
         requestId: session.requested.id,
         issuer: `${this.opts.samlAudience}`,
-        profile,
+        claims: mappedClaims,
         ...certificate,
+        flattenArray: true,
       });
 
       const responseForm = saml.createPostForm(session.requested.acsUrl, [
@@ -302,6 +324,7 @@ export class SSOHandler {
 
       return { responseForm };
     } catch (err) {
+      console.error('Error creating SAML response:', err);
       // TODO: Instead send saml response with status code
       throw new JacksonError('Unable to validate SAML Response.', 403);
     }
@@ -313,11 +336,13 @@ export class SSOHandler {
     requested,
     oidcCodeVerifier,
     oidcNonce,
+    mappings,
   }: {
     requestId: string;
     requested: any;
     oidcCodeVerifier?: string;
     oidcNonce?: string;
+    mappings: AttributeMapping[] | null;
   }) => {
     const sessionId = crypto.randomBytes(16).toString('hex');
 
@@ -325,6 +350,7 @@ export class SSOHandler {
       id: requestId,
       requested,
       samlFederated: true,
+      mappings,
     };
 
     if (oidcCodeVerifier) {

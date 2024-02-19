@@ -15,7 +15,7 @@ import { throwIfInvalidLicense } from '../common/checkLicense';
 
 type NewAppParams = Pick<
   SAMLFederationApp,
-  'name' | 'tenant' | 'product' | 'acsUrl' | 'entityId' | 'tenants'
+  'name' | 'tenant' | 'product' | 'acsUrl' | 'entityId' | 'tenants' | 'mappings'
 > & {
   logoUrl?: string;
   faviconUrl?: string;
@@ -112,6 +112,16 @@ export class App {
    *         in: formData
    *         required: false
    *         type: string
+   *       - name: tenants
+   *         description: Mapping of tenants whose connections will be grouped under this SAML Federation app
+   *         in: formData
+   *         required: false
+   *         type: array
+   *       - name: mappings
+   *         description: Mapping of attributes from the IdP to SP
+   *         in: formData
+   *         required: false
+   *         type: array
    *     tags: [SAML Federation]
    *     produces:
    *      - application/json
@@ -136,6 +146,7 @@ export class App {
     faviconUrl,
     primaryColor,
     tenants,
+    mappings,
   }: NewAppParams) {
     await throwIfInvalidLicense(this.opts.boxyhqLicenseKey);
 
@@ -150,11 +161,27 @@ export class App {
 
     const id = appID(tenant, product);
 
+    // Check if an app already exists for the same tenant and product
     const foundApp = await this.store.get(id);
 
     if (foundApp) {
       throw new JacksonError(
         'Cannot create another app for the same tenant and product. An app already exists.',
+        400
+      );
+    }
+
+    // Check if an app already exists with the same entityId
+    const result = await this.store.getByIndex({
+      name: IndexNames.EntityID,
+      value: entityId,
+    });
+
+    const apps: SAMLFederationApp[] = result.data;
+
+    if (apps && apps.length > 0) {
+      throw new JacksonError(
+        `An app already exists with the same Entity ID. Provide a unique Entity ID and try again.`,
         400
       );
     }
@@ -179,6 +206,7 @@ export class App {
       faviconUrl: faviconUrl || null,
       primaryColor: primaryColor || null,
       tenants: _tenants,
+      mappings: mappings || [],
     };
 
     await this.store.put(
@@ -365,6 +393,16 @@ export class App {
    *         in: formData
    *         required: false
    *         type: string
+   *       - name: tenants
+   *         description: Mapping of tenants whose connections will be grouped under this SAML Federation app
+   *         in: formData
+   *         required: false
+   *         type: array
+   *       - name: mappings
+   *         description: Mapping of attributes from the IdP to SP
+   *         in: formData
+   *         required: false
+   *         type: array
    *     tags:
    *       - SAML Federation
    *     produces:
@@ -434,6 +472,10 @@ export class App {
       }
 
       toUpdate['tenants'] = _tenants;
+    }
+
+    if ('mappings' in params) {
+      toUpdate['mappings'] = params.mappings;
     }
 
     if (Object.keys(toUpdate).length === 0) {
