@@ -9,8 +9,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     switch (method) {
       case 'GET':
         return await handleGET(req, res);
-      case 'PUT':
-        return await handlePUT(req, res);
+      case 'PATCH':
+        return await handlePATCH(req, res);
       case 'DELETE':
         return await handleDELETE(req, res);
       default:
@@ -26,7 +26,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-// Get SAML Federation app by id
+// Get Identity Federation app by id
 const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   const { samlFederatedController } = await jackson();
 
@@ -43,8 +43,8 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   });
 };
 
-// Update SAML Federation app
-const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
+// Update Identity Federation app
+const handlePATCH = async (req: NextApiRequest, res: NextApiResponse) => {
   const { samlFederatedController } = await jackson();
 
   const updatedApp = await samlFederatedController.app.update(req.body);
@@ -52,7 +52,7 @@ const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
   return res.status(200).json({ data: updatedApp });
 };
 
-// Delete the SAML Federation app
+// Delete the Identity Federation app
 const handleDELETE = async (req: NextApiRequest, res: NextApiResponse) => {
   const { samlFederatedController } = await jackson();
 

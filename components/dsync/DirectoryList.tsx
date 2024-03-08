@@ -2,8 +2,8 @@ import LinkIcon from '@heroicons/react/24/outline/LinkIcon';
 import { useTranslation } from 'next-i18next';
 import { LinkPrimary } from '@components/LinkPrimary';
 import { useRouter } from 'next/router';
-import { pageLimit } from '@components/Pagination';
 import { DirectoryList } from '@boxyhq/react-ui/dsync';
+import { pageLimit } from '@boxyhq/internal-ui';
 
 const DSyncDirectoryList = ({ setupLinkToken }: { setupLinkToken?: string }) => {
   const { t } = useTranslation('common');
@@ -39,12 +39,18 @@ const DSyncDirectoryList = ({ setupLinkToken }: { setupLinkToken?: string }) => 
           !isSetupLinkView
             ? {
                 itemsPerPage: pageLimit,
-                handlePageChange: ({ offset }) => {
-                  const currentOffset = router.query.offset;
-                  if (currentOffset !== `${offset}`) {
-                    router.query.offset = `${offset}`;
-                    router.push(router);
-                  }
+                handlePageChange: (payload) => {
+                  router.push(
+                    {
+                      pathname: router.pathname,
+                      query: {
+                        ...router.query,
+                        ...payload,
+                      },
+                    },
+                    undefined,
+                    { shallow: true }
+                  );
                 },
               }
             : undefined

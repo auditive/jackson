@@ -3,8 +3,8 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { LinkPrimary } from '@components/LinkPrimary';
 import { InputWithCopyButton } from '@components/ClipboardButton';
-import { pageLimit } from '@components/Pagination';
 import { ConnectionList } from '@boxyhq/react-ui/sso';
+import { pageLimit } from '@boxyhq/internal-ui';
 
 const SSOConnectionList = ({
   setupLinkToken,
@@ -75,12 +75,18 @@ const SSOConnectionList = ({
           enablePagination
             ? {
                 itemsPerPage: pageLimit,
-                handlePageChange: ({ offset }) => {
-                  const currentOffset = router.query.offset;
-                  if (currentOffset !== `${offset}`) {
-                    router.query.offset = `${offset}`;
-                    router.push(router);
-                  }
+                handlePageChange: (payload) => {
+                  router.push(
+                    {
+                      pathname: router.pathname,
+                      query: {
+                        ...router.query,
+                        ...payload,
+                      },
+                    },
+                    undefined,
+                    { shallow: true }
+                  );
                 },
               }
             : undefined

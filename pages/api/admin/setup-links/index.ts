@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import jackson from '@lib/jackson';
+import { parsePaginateApiParams } from '@lib/utils';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { method } = req;
@@ -35,9 +36,9 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 const handleDELETE = async (req: NextApiRequest, res: NextApiResponse) => {
   const { setupLinkController } = await jackson();
 
-  const { setupID } = req.query as { setupID: string };
+  const { id } = req.query as { id: string };
 
-  await setupLinkController.remove({ id: setupID });
+  await setupLinkController.remove({ id });
 
   return res.json({ data: {} });
 };
@@ -45,13 +46,12 @@ const handleDELETE = async (req: NextApiRequest, res: NextApiResponse) => {
 const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   const { setupLinkController } = await jackson();
 
-  const { token, service, offset, limit, pageToken } = req.query as {
-    offset: string;
-    limit: string;
-    pageToken?: string;
+  const { token, service } = req.query as {
     token: string;
     service: string;
   };
+
+  const { pageOffset, pageLimit, pageToken } = parsePaginateApiParams(req.query);
 
   if (!token && !service) {
     return res.status(404).json({
@@ -73,8 +73,8 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   if (service) {
     const setupLinksPaginated = await setupLinkController.filterBy({
       service: service as any,
-      pageLimit: parseInt(limit),
-      pageOffset: parseInt(offset),
+      pageOffset,
+      pageLimit,
       pageToken,
     });
 
