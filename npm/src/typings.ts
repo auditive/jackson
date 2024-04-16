@@ -7,6 +7,7 @@ export * from './directory-sync/types';
 export * from './event/types';
 
 import db from './db/db';
+import { EventCallback } from './typings';
 
 export type DB = Awaited<ReturnType<typeof db.new>>;
 
@@ -437,6 +438,7 @@ export interface JacksonOption {
       private: string;
       public: string;
     };
+    requestProfileScope?: boolean; // defaults to true
   };
   certs?: {
     publicKey: string;
@@ -455,13 +457,18 @@ export interface JacksonOption {
   webhook?: Webhook;
   dsync?: {
     webhookBatchSize?: number;
+    webhookBatchCronInterval?: number;
+    debugWebhooks?: boolean;
     providers?: {
       google: {
         clientId: string;
         clientSecret: string;
-        callbackUrl: string;
+        authorizePath: string;
+        callbackPath: string;
+        cronInterval?: number;
       };
     };
+    callback?: EventCallback;
   };
 
   /**  The number of days a setup link is valid for. Defaults to 3 days. */

@@ -94,6 +94,7 @@ export class OAuthController implements IOAuthController {
     let requestedProduct;
     let requestedScopes: string[] | undefined;
     let requestedOIDCFlow: boolean | undefined;
+    let isOIDCFederated: boolean | undefined;
     let connection: SAMLSSORecord | OIDCSSORecord | undefined;
     let fedApp: SAMLFederationApp | undefined;
 
@@ -176,6 +177,7 @@ export class OAuthController implements IOAuthController {
           // client_id is not encoded, so we look for the connection using the client_id
           // First we check if it's a federated connection
           if (client_id.startsWith(`${clientIDFederatedPrefix}${clientIDOIDCPrefix}`)) {
+            isOIDCFederated = true;
             fedApp = await this.samlFedApp.get({
               id: client_id.replace(clientIDFederatedPrefix, ''),
             });
@@ -226,6 +228,10 @@ export class OAuthController implements IOAuthController {
           throw new JacksonError('Redirect URL is not allowed.', 403);
         }
       }
+
+      if (!isConnectionActive(connection)) {
+        throw new JacksonError('SSO connection is deactivated. Please contact your administrator.', 403);
+      }
     } catch (err: unknown) {
       const error_description = getErrorMessage(err);
       // Save the error trace
@@ -236,14 +242,11 @@ export class OAuthController implements IOAuthController {
           product: requestedProduct || '',
           clientID: connection?.clientID || '',
           requestedOIDCFlow,
+          isOIDCFederated,
           redirectUri: redirect_uri,
         },
       });
       throw err;
-    }
-
-    if (!isConnectionActive(connection)) {
-      throw new JacksonError('SSO connection is deactivated. Please contact your administrator.', 403);
     }
 
     const isMissingJWTKeysForOIDCFlow =
@@ -286,6 +289,7 @@ export class OAuthController implements IOAuthController {
           product: requestedProduct,
           clientID: connection.clientID,
           requestedOIDCFlow,
+          isOIDCFederated,
           redirectUri: redirect_uri,
         },
       });
@@ -330,6 +334,7 @@ export class OAuthController implements IOAuthController {
               product: requestedProduct as string,
               clientID: connection.clientID,
               requestedOIDCFlow,
+              isOIDCFederated,
               redirectUri: redirect_uri,
             },
           });
@@ -366,6 +371,7 @@ export class OAuthController implements IOAuthController {
             product: requestedProduct,
             clientID: connection.clientID,
             requestedOIDCFlow,
+            isOIDCFederated,
             redirectUri: redirect_uri,
           },
         });
@@ -385,18 +391,11 @@ export class OAuthController implements IOAuthController {
     let oidcCodeVerifier: string | undefined;
     let oidcNonce: string | undefined;
     if (connectionIsOIDC) {
-      if (!this.opts.oidcPath) {
-        return {
-          redirect_url: OAuthErrorResponse({
-            error: 'server_error',
-            error_description: 'OpenID response handler path (oidcPath) is not set',
-            redirect_uri,
-            state,
-          }),
-        };
-      }
       const { discoveryUrl, metadata, clientId, clientSecret } = (connection as OIDCSSORecord).oidcProvider;
       try {
+        if (!this.opts.oidcPath) {
+          throw new JacksonError('OpenID response handler path (oidcPath) is not set');
+        }
         const oidcIssuer = await oidcIssuerInstance(discoveryUrl, metadata);
         const oidcClient = new oidcIssuer.Client({
           client_id: clientId as string,
@@ -407,8 +406,11 @@ export class OAuthController implements IOAuthController {
         oidcCodeVerifier = generators.codeVerifier();
         const code_challenge = generators.codeChallenge(oidcCodeVerifier);
         oidcNonce = generators.nonce();
+        const standardScopes = this.opts.openid?.requestProfileScope
+          ? ['openid', 'email', 'profile']
+          : ['openid', 'email'];
         ssoUrl = oidcClient.authorizationUrl({
-          scope: [...requestedScopes, 'openid', 'email', 'profile']
+          scope: [...requestedScopes, ...standardScopes]
             .filter((value, index, self) => self.indexOf(value) === index) // filter out duplicates
             .join(' '),
           code_challenge,
@@ -418,11 +420,25 @@ export class OAuthController implements IOAuthController {
           login_hint,
         });
       } catch (err: unknown) {
+        const error_description = (err as errors.OPError)?.error || getErrorMessage(err);
+        // Save the error trace
+        const traceId = await this.ssoTracer.saveTrace({
+          error: error_description,
+          context: {
+            tenant: requestedTenant as string,
+            product: requestedProduct as string,
+            clientID: connection.clientID,
+            requestedOIDCFlow,
+            isOIDCFederated,
+            redirectUri: redirect_uri,
+          },
+        });
+
         if (err) {
           return {
             redirect_url: OAuthErrorResponse({
               error: 'server_error',
-              error_description: (err as errors.OPError)?.error || getErrorMessage(err),
+              error_description: traceId ? `${traceId}: ${error_description}` : error_description,
               redirect_uri,
               state,
             }),
@@ -463,7 +479,14 @@ export class OAuthController implements IOAuthController {
         code_challenge,
         code_challenge_method,
         requested,
-        oidcFederated: fedApp ? { redirectUrl: fedApp.redirectUrl, id: fedApp.id } : undefined,
+        oidcFederated: fedApp
+          ? {
+              redirectUrl: fedApp.redirectUrl,
+              id: fedApp.id,
+              clientID: fedApp.clientID,
+              clientSecret: fedApp.clientSecret,
+            }
+          : undefined,
       };
       await this.sessionStore.put(
         sessionId,
@@ -517,6 +540,7 @@ export class OAuthController implements IOAuthController {
           product: requestedProduct as string,
           clientID: connection.clientID,
           requestedOIDCFlow,
+          isOIDCFederated,
           redirectUri: redirect_uri,
           samlRequest: samlReq?.request || '',
         },
@@ -608,6 +632,9 @@ export class OAuthController implements IOAuthController {
         // Found a connection
         if ('connection' in response) {
           connection = response.connection as SAMLSSORecord;
+          if (!isConnectionActive(connection)) {
+            throw new JacksonError('SSO connection is deactivated. Please contact your administrator.', 403);
+          }
         }
       }
 
@@ -671,8 +698,9 @@ export class OAuthController implements IOAuthController {
           providerName: connection?.idpMetadata?.provider,
           redirectUri: isIdPFlow ? connection?.defaultRedirectUrl : session?.redirect_uri,
           issuer,
-          isSAMLFederated: !!isSAMLFederated,
-          isIdPFlow: !!isIdPFlow,
+          isSAMLFederated,
+          isOIDCFederated,
+          isIdPFlow,
           requestedOIDCFlow: !!session?.requested?.oidc,
           acsUrl: session?.requested?.acsUrl,
           entityId: session?.requested?.entityId,
@@ -721,6 +749,7 @@ export class OAuthController implements IOAuthController {
           providerName: connection?.idpMetadata?.provider,
           redirectUri: isIdPFlow ? connection?.defaultRedirectUrl : session?.redirect_uri,
           isSAMLFederated,
+          isOIDCFederated,
           isIdPFlow,
           acsUrl: session.requested.acsUrl,
           entityId: session.requested.entityId,
@@ -807,8 +836,8 @@ export class OAuthController implements IOAuthController {
           entityId: session?.requested?.entityId,
           redirectUri: redirect_uri,
           relayState: RelayState,
-          isSAMLFederated: !!isSAMLFederated,
-          isOIDCFederated: !!isOIDCFederated,
+          isSAMLFederated,
+          isOIDCFederated,
           requestedOIDCFlow: !!session?.requested?.oidc,
         },
       });
@@ -867,8 +896,8 @@ export class OAuthController implements IOAuthController {
           providerName: oidcConnection.oidcProvider.provider,
           redirectUri: redirect_uri,
           relayState: RelayState,
-          isSAMLFederated: !!isSAMLFederated,
-          isOIDCFederated: !!isOIDCFederated,
+          isSAMLFederated,
+          isOIDCFederated,
           acsUrl: session.requested.acsUrl,
           entityId: session.requested.entityId,
           requestedOIDCFlow: !!session.requested.oidc,
@@ -988,10 +1017,23 @@ export class OAuthController implements IOAuthController {
    *             token_type: bearer
    *             expires_in: 300
    */
-  public async token(body: OAuthTokenReq): Promise<OAuthTokenRes> {
+  public async token(body: OAuthTokenReq, authHeader?: string | null): Promise<OAuthTokenRes> {
+    let basic_client_id: string | undefined;
+    let basic_client_secret: string | undefined;
+    try {
+      if (authHeader) {
+        // Authorization: Basic {Base64(<client_id>:<client_secret>)}
+        const base64Credentials = authHeader.split(' ')[1];
+        const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+        [basic_client_id, basic_client_secret] = credentials.split(':');
+      }
+    } catch (err) {
+      // no-op
+    }
+
     const { code, grant_type = 'authorization_code', redirect_uri } = body;
-    const client_id = 'client_id' in body ? body.client_id : undefined;
-    const client_secret = 'client_secret' in body ? body.client_secret : undefined;
+    const client_id = 'client_id' in body ? body.client_id : basic_client_id;
+    const client_secret = 'client_secret' in body ? body.client_secret : basic_client_secret;
     const code_verifier = 'code_verifier' in body ? body.code_verifier : undefined;
 
     metrics.increment('oauthToken');
@@ -1027,6 +1069,16 @@ export class OAuthController implements IOAuthController {
 
       if (codeVal.session.code_challenge !== cv) {
         throw new JacksonError('Invalid code_verifier', 401);
+      }
+
+      // For Federation flow, we need to verify the client_secret
+      if (client_id?.startsWith(`${clientIDFederatedPrefix}${clientIDOIDCPrefix}`)) {
+        if (
+          client_id !== codeVal.session?.oidcFederated?.clientID ||
+          client_secret !== codeVal.session?.oidcFederated?.clientSecret
+        ) {
+          throw new JacksonError('Invalid client_id or client_secret', 401);
+        }
       }
     } else if (client_id && client_secret) {
       // check if we have an encoded client_id

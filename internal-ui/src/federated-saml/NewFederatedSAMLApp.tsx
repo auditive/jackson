@@ -7,7 +7,7 @@ import QuestionMarkCircleIcon from '@heroicons/react/24/outline/QuestionMarkCirc
 import { defaultHeaders } from '../utils';
 import { AttributesMapping } from './AttributesMapping';
 import { PageHeader } from '../shared';
-import { ItemList } from '../shared/ItemList';
+import { ItemList } from '@boxyhq/react-ui/shared';
 
 type NewSAMLFederationApp = Pick<
   SAMLFederationApp,
@@ -109,7 +109,7 @@ export const NewFederatedSAMLApp = ({
                     checked={formik.values.type === 'oidc'}
                     onChange={formik.handleChange}
                   />
-                  <span className='label-text ml-1'>{t('bui-fs-oidc')}</span>
+                  <span className='label-text ml-1'>{t('bui-shared-oidc')}</span>
                 </label>
               </div>
             </div>
@@ -162,7 +162,7 @@ export const NewFederatedSAMLApp = ({
           {connectionIsSAML && (
             <label className='form-control w-full'>
               <div className='label'>
-                <span className='label-text'>{t('bui-fs-acs-url')}</span>
+                <span className='label-text'>{t('bui-shared-acs-url')}</span>
               </div>
               <input
                 type='url'
@@ -177,12 +177,14 @@ export const NewFederatedSAMLApp = ({
           )}
           {connectionIsOIDC && (
             <label className='form-control w-full'>
-              <div className='label'>
-                <span className='label-text'>{t('bui-sl-allowed-redirect-urls-new')}</span>
-              </div>
               <ItemList
+                classNames={{ label: 'label', input: 'input input-bordered input-sm w-full' }}
+                label={t('bui-sl-allowed-redirect-urls-new')}
+                inputType={'url'}
                 currentlist={formik.values.redirectUrl || ['']}
-                onItemListChange={(newList) => formik.setFieldValue('redirectUrl', newList)}></ItemList>
+                fieldName='redirectUrl'
+                handleItemListUpdate={(fieldName, newList) => formik.setFieldValue(fieldName, newList)}
+              />
             </label>
           )}
           {connectionIsSAML && (
@@ -226,7 +228,7 @@ export const NewFederatedSAMLApp = ({
               onlyUnique={true}
               inputProps={{
                 placeholder: t('bui-fs-enter-tenant'),
-                autocomplete: 'off',
+                autoComplete: 'off',
               }}
               focusedClassName='input-focused'
               addOnBlur={true}

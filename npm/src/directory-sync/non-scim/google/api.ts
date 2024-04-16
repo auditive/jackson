@@ -33,7 +33,7 @@ export class GoogleProvider implements IDirectoryProvider {
     const authClient = new OAuth2Client(
       googleProvider?.clientId,
       googleProvider?.clientSecret,
-      googleProvider?.callbackUrl
+      `${this.opts.externalUrl}${googleProvider?.callbackPath}`
     );
 
     authClient.setCredentials({
@@ -95,7 +95,7 @@ export class GoogleProvider implements IDirectoryProvider {
     return {
       data: users,
       metadata: {
-        nextPageToken: response.data.nextPageToken,
+        pageToken: response.data.nextPageToken ?? undefined,
         hasNextPage: !!response.data.nextPageToken,
       },
     };

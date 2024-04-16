@@ -3,6 +3,13 @@ import _ from 'lodash';
 import { DirectorySyncProviders } from '../../typings';
 import type { DirectoryType, User, UserPatchOperation, GroupPatchOperation } from '../../typings';
 
+export const indexNames = {
+  directoryIdUsername: 'directoryIdUsername',
+  directoryIdDisplayname: 'directoryIdDisplayname',
+  directoryId: 'directoryId',
+  groupId: 'groupId',
+};
+
 const parseUserRoles = (roles: string | string[]) => {
   if (typeof roles === 'string') {
     return roles.split(',');
@@ -14,7 +21,7 @@ const parseUserRoles = (roles: string | string[]) => {
 export const parseGroupOperation = (operation: GroupPatchOperation) => {
   const { op, path, value } = operation;
 
-  if (path === 'members') {
+  if (path === 'members' && typeof value == 'object') {
     if (op === 'add') {
       return {
         action: 'addGroupMember',
@@ -40,11 +47,18 @@ export const parseGroupOperation = (operation: GroupPatchOperation) => {
   }
 
   // Update group name
-  if (op === 'replace' && 'displayName' in value) {
-    return {
-      action: 'updateGroupName',
-      displayName: value.displayName,
-    };
+  if (op === 'replace') {
+    if (path == 'displayName' && typeof value == 'string') {
+      return {
+        action: 'updateGroupName',
+        displayName: value,
+      };
+    } else if (typeof value == 'object' && 'displayName' in value) {
+      return {
+        action: 'updateGroupName',
+        displayName: value.displayName,
+      };
+    }
   }
 
   return {

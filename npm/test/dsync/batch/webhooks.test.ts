@@ -56,13 +56,11 @@ tap.before(async () => {
     log_webhook_events: true,
   });
 
-  const eventCallback = directorySync.events.callback;
-
   // Add some users to generate events
-  await directorySync.requests.handle(requests.create(directory1, users[0]), eventCallback);
-  await directorySync.requests.handle(requests.create(directory1, users[1]), eventCallback);
-  await directorySync.requests.handle(requests.create(directory2, users[1]), eventCallback);
-  await directorySync.requests.handle(requests.create(directory2, users[0]), eventCallback);
+  await directorySync.requests.handle(requests.create(directory1, users[0]));
+  await directorySync.requests.handle(requests.create(directory1, users[1]));
+  await directorySync.requests.handle(requests.create(directory2, users[1]));
+  await directorySync.requests.handle(requests.create(directory2, users[0]));
 });
 
 tap.teardown(async () => {
@@ -142,7 +140,7 @@ tap.test('Event batching', async (t) => {
   });
 
   t.test('Should log the webhook events if logging is enabled', async (t) => {
-    const logs = await directorySync.webhookLogs
+    const { data: logs } = await directorySync.webhookLogs
       .setTenantAndProduct(directory1Payload.tenant, directory1Payload.product)
       .getAll();
 
@@ -159,7 +157,7 @@ tap.test('Event batching', async (t) => {
   });
 
   t.test('Should not log the webhook events if logging is disabled', async (t) => {
-    const logs = await directorySync.webhookLogs
+    const { data: logs } = await directorySync.webhookLogs
       .setTenantAndProduct(directory2Payload.tenant, directory2Payload.product)
       .getAll();
 

@@ -17,6 +17,7 @@ import { TableBodyType } from '../shared/Table';
 import { pageLimit } from '../shared/Pagination';
 import { usePaginate } from '../hooks';
 import { useRouter } from '../hooks';
+import { useEffect } from 'react';
 
 type ExcludeFields = keyof Pick<SAMLFederationApp, 'product'>;
 
@@ -35,7 +36,7 @@ export const FederatedSAMLApps = ({
 }) => {
   const { router } = useRouter();
   const { t } = useTranslation('common');
-  const { paginate, setPaginate, pageTokenMap } = usePaginate(router!);
+  const { paginate, setPaginate, pageTokenMap, setPageTokenMap } = usePaginate(router!);
 
   let getAppsUrl = `${urls.getApps}?pageOffset=${paginate.offset}&pageLimit=${pageLimit}`;
 
@@ -44,7 +45,18 @@ export const FederatedSAMLApps = ({
     getAppsUrl += `&pageToken=${pageTokenMap[paginate.offset - pageLimit]}`;
   }
 
-  const { data, isLoading, error } = useSWR<{ data: SAMLFederationApp[] }>(getAppsUrl, fetcher);
+  const { data, isLoading, error } = useSWR<{ data: SAMLFederationApp[]; pageToken?: string }>(
+    getAppsUrl,
+    fetcher
+  );
+
+  const nextPageToken = data?.pageToken;
+
+  useEffect(() => {
+    if (nextPageToken) {
+      setPageTokenMap((tokenMap) => ({ ...tokenMap, [paginate.offset]: nextPageToken }));
+    }
+  }, [nextPageToken, paginate.offset]);
 
   if (isLoading) {
     return <Loading />;
@@ -81,6 +93,12 @@ export const FederatedSAMLApps = ({
       wrap: true,
       dataIndex: 'product',
     },
+    {
+      key: 'type',
+      label: t('bui-shared-type'),
+      wrap: true,
+      dataIndex: 'type',
+    },
   ];
 
   if (excludeFields) {
@@ -94,9 +112,16 @@ export const FederatedSAMLApps = ({
       id: app.id,
       cells: columns.map((column) => {
         const dataIndex = column.dataIndex as keyof typeof app;
+        let columnText: string | undefined = app[dataIndex] as string;
+        if (column.key === 'type') {
+          if (!columnText) {
+            columnText = 'SAML';
+          }
+          columnText = columnText?.toUpperCase();
+        }
         return {
           wrap: column.wrap,
-          text: app[dataIndex] as string,
+          text: columnText,
         };
       }),
     };
@@ -132,7 +157,7 @@ export const FederatedSAMLApps = ({
               {t('bui-fs-oidc-config')}
             </LinkOutline>
             <LinkOutline href={actions.samlConfiguration} target='_blank' className='btn-md'>
-              {t('bui-fs-saml-config')}
+              {t('bui-shared-saml-configuration')}
             </LinkOutline>
             <ButtonPrimary onClick={() => router?.push(actions.newApp)} className='btn-md'>
               {t('bui-fs-new-app')}

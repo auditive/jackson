@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 import EyeIcon from '@heroicons/react/24/outline/EyeIcon';
 import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
@@ -51,7 +51,7 @@ export const SetupLinks = ({
   const [showSetupLink, setShowSetupLink] = useState(false);
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [setupLink, setSetupLink] = useState<SetupLink | null>(null);
-  const { paginate, setPaginate, pageTokenMap } = usePaginate(router!);
+  const { paginate, setPaginate, pageTokenMap, setPageTokenMap } = usePaginate(router!);
 
   const params = {
     pageOffset: paginate.offset,
@@ -65,7 +65,18 @@ export const SetupLinks = ({
   }
 
   const getLinksUrl = addQueryParamsToPath(urls.getLinks, params);
-  const { data, isLoading, error, mutate } = useSWR<{ data: SetupLink[] }>(getLinksUrl, fetcher);
+  const { data, isLoading, error, mutate } = useSWR<{ data: SetupLink[]; pageToken?: string }>(
+    getLinksUrl,
+    fetcher
+  );
+
+  const nextPageToken = data?.pageToken;
+
+  useEffect(() => {
+    if (nextPageToken) {
+      setPageTokenMap((tokenMap) => ({ ...tokenMap, [paginate.offset]: nextPageToken }));
+    }
+  }, [nextPageToken, paginate.offset]);
 
   if (isLoading) {
     return <Loading />;
@@ -84,11 +95,11 @@ export const SetupLinks = ({
   const noMoreResults = links.length === 0 && paginate.offset > 0;
 
   let cols = [
-    t('bui-sl-tenant'),
-    t('bui-sl-product'),
+    t('bui-shared-tenant'),
+    t('bui-shared-product'),
     t('bui-sl-validity'),
-    t('bui-sl-status'),
-    t('bui-sl-actions'),
+    t('bui-shared-status'),
+    t('bui-shared-actions'),
   ];
 
   // Exclude fields
@@ -118,7 +129,7 @@ export const SetupLinks = ({
         wrap: false,
         element:
           new Date(setupLink.validTill) > new Date() ? (
-            <Badge color='primary'>{t('bui-sl-active')}</Badge>
+            <Badge color='primary'>{t('bui-shared-active')}</Badge>
           ) : (
             <Badge color='warning'>{t('bui-sl-expired')}</Badge>
           ),
@@ -126,7 +137,7 @@ export const SetupLinks = ({
       {
         actions: [
           {
-            text: t('bui-sl-copy'),
+            text: t('bui-shared-copy'),
             onClick: () => {
               copyToClipboard(setupLink.url);
               onCopy(setupLink);
@@ -134,7 +145,7 @@ export const SetupLinks = ({
             icon: <ClipboardDocumentIcon className='h-5 w-5' />,
           },
           {
-            text: t('bui-sl-view'),
+            text: t('bui-shared-view'),
             onClick: () => {
               setSetupLink(setupLink);
               setShowSetupLink(true);
@@ -151,7 +162,7 @@ export const SetupLinks = ({
           },
           {
             destructive: true,
-            text: t('bui-sl-delete'),
+            text: t('bui-shared-delete'),
             onClick: () => {
               setSetupLink(setupLink);
               setDelModal(true);

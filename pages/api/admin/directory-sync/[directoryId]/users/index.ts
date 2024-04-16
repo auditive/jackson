@@ -1,44 +1,42 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import jackson from '@lib/jackson';
+import { defaultHandler } from '@lib/api';
+import { ApiError } from '@lib/error';
+import { parsePaginateApiParams } from '@lib/utils';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const { method } = req;
-
-  switch (method) {
-    case 'GET':
-      return await handleGET(req, res);
-    default:
-      res.setHeader('Allow', 'GET');
-      res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
-  }
+  await defaultHandler(req, res, {
+    GET: handleGET,
+  });
 };
 
 // Get all users in a directory
 const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   const { directorySyncController } = await jackson();
 
-  const { directoryId, offset, limit } = req.query as { directoryId: string; offset: string; limit: string };
+  const { directoryId } = req.query as {
+    directoryId: string;
+  };
 
-  const { data: directory } = await directorySyncController.directories.get(directoryId);
+  const { pageOffset, pageLimit, pageToken } = parsePaginateApiParams(req.query);
 
-  if (!directory) {
-    return res.status(404).json({ error: { message: 'Directory not found.' } });
-  }
-
-  const pageOffset = parseInt(offset);
-  const pageLimit = parseInt(limit);
-
-  const { data: users, error } = await directorySyncController.users
-    .setTenantAndProduct(directory.tenant, directory.product)
-    .getAll({ pageOffset, pageLimit, directoryId });
+  const { data: directory, error } = await directorySyncController.directories.get(directoryId);
 
   if (error) {
-    return res.status(error.code).json({ error });
+    throw new ApiError(error.message, error.code);
   }
 
-  if (users) {
-    return res.status(200).json({ data: users });
+  const result = await directorySyncController.users
+    .setTenantAndProduct(directory.tenant, directory.product)
+    .getAll({ pageOffset, pageLimit, pageToken, directoryId });
+
+  if (result.error) {
+    throw new ApiError(result.error.message, result.error.code);
+  } else if (result.pageToken) {
+    res.setHeader('jackson-pagetoken', result.pageToken);
   }
+
+  res.json({ data: result.data });
 };
 
 export default handler;

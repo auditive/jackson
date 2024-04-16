@@ -22,27 +22,28 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "vite-tsconfig-paths": "4.3.1"
+    "vite-tsconfig-paths": "4.3.2"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "11.1.6",
-    "@types/node": "20.11.25",
-    "@types/react": "18.2.64",
-    "@typescript-eslint/eslint-plugin": "7.1.1",
-    "@typescript-eslint/parser": "7.1.1",
+    "@types/node": "20.12.7",
+    "@types/react": "18.2.79",
+    "@typescript-eslint/eslint-plugin": "7.7.0",
+    "@typescript-eslint/parser": "7.7.0",
     "@vitejs/plugin-react": "4.2.1",
     "eslint": "8.57.0",
     "eslint-plugin-react-hooks": "4.6.0",
-    "eslint-plugin-react-refresh": "0.4.5",
+    "eslint-plugin-react-refresh": "0.4.6",
     "prettier": "3.2.5",
     "react-daisyui": "5.0.0",
-    "typescript": "5.4.2",
-    "vite": "5.1.5"
+    "typescript": "5.4.5",
+    "vite": "5.2.9"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.12.1"
+    "@rollup/rollup-linux-x64-gnu": "4.14.3"
   },
   "peerDependencies": {
+    "@boxyhq/react-ui": ">=3.3.42",
     "@heroicons/react": ">=2.1.1",
     "classnames": ">=2.5.1",
     "formik": ">=2.4.5",

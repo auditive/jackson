@@ -8,7 +8,7 @@ import { WebhookEventsLogger } from './scim/WebhookEventsLogger';
 import { ApiError } from '../typings';
 import { RequestHandler } from './request';
 import { EventProcessor } from './batch-events/queue';
-import { EventLock as Lock } from './batch-events/lock';
+import { CronLock as Lock } from '../cron/lock';
 
 export type IDirectorySyncController = Awaited<ReturnType<typeof directorySync>>;
 export type IDirectoryConfig = InstanceType<typeof DirectoryConfig>;
@@ -19,7 +19,7 @@ export type IGroups = InstanceType<typeof Groups>;
 export type IWebhookEventsLogger = InstanceType<typeof WebhookEventsLogger>;
 export type IRequestHandler = InstanceType<typeof RequestHandler>;
 export type IEventProcessor = InstanceType<typeof EventProcessor>;
-export type EventLock = InstanceType<typeof Lock>;
+export type CronLock = InstanceType<typeof Lock>;
 
 export type DirectorySyncEventType =
   | 'user.created'
@@ -62,6 +62,7 @@ export type Directory = {
   google_domain?: string;
   google_access_token?: string;
   google_refresh_token?: string;
+  google_authorization_url?: string;
 };
 
 export type DirectorySyncGroupMember = { value: string; email?: string };
@@ -163,10 +164,12 @@ export type UserPatchOperation = {
 export type GroupPatchOperation = {
   op: 'add' | 'remove' | 'replace';
   path?: 'members' | 'displayName';
-  value: {
-    value: string;
-    display?: string;
-  }[];
+  value:
+    | string
+    | {
+        value: string;
+        display?: string;
+      }[];
 };
 
 export type GroupMembership = {
@@ -175,7 +178,7 @@ export type GroupMembership = {
   user_id: string;
 };
 
-export type Response<T> = { data: T; error: null } | { data: null; error: ApiError };
+export type Response<T> = { data: T; error: null; pageToken?: string } | { data: null; error: ApiError };
 
 export type EventCallback = (event: DirectorySyncEvent) => Promise<void>;
 
