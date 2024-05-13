@@ -1,17 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import jackson from '@lib/jackson';
 import { parsePaginateApiParams } from '@lib/utils';
+import { defaultHandler } from '@lib/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { method } = req;
-
-  switch (method) {
-    case 'GET':
-      return await handleGET(req, res);
-    default:
-      res.setHeader('Allow', 'GET');
-      res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
-  }
+  await defaultHandler(req, res, {
+    GET: handleGET,
+  });
 }
 
 // Get the users
@@ -41,16 +36,16 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
     product = directory.product;
   }
 
-  const { data, error } = await directorySyncController.users.setTenantAndProduct(tenant, product).getAll({
+  const users = await directorySyncController.users.setTenantAndProduct(tenant, product).getAll({
     pageOffset,
     pageLimit,
     pageToken,
     directoryId: searchParams.directoryId,
   });
 
-  if (error) {
-    return res.status(error.code).json({ error });
+  if (users.error) {
+    return res.status(users.error.code).json({ error: users.error });
   }
 
-  return res.status(200).json({ data });
+  return res.status(200).json(users);
 };
