@@ -3,7 +3,7 @@ import styles from './BlocklyComponent.module.css';
 import { useEffect, useRef, createRef } from 'react';
 import { useTranslation } from 'next-i18next';
 
-import Blockly from 'blockly/core';
+import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import { maskSetup } from '@components/terminus/blocks/customblocks';
 import locale from 'blockly/msg/en';
@@ -35,11 +35,11 @@ function BlocklyComponent(props) {
 
   const uploadModel = async () => {
     const domToPretty = modelToXML();
-    const cueModel = generateModel(primaryWorkspace.current, roles);
+    const model = generateModel(primaryWorkspace.current, roles);
 
     const body = {
-      cue_schema: cueModel,
-      blockly_schema: domToPretty,
+      model: model,
+      blockly_model: domToPretty,
     };
 
     const requestOptions = {

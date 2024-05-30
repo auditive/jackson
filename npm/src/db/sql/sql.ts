@@ -52,6 +52,12 @@ class Sql implements DatabaseDriver {
             options: mssqlOpts.options,
             ...baseOpts,
           });
+        } else if (sqlType === 'sqlite') {
+          this.dataSource = new DataSource(<DataSourceOptions>{
+            database: this.options.url,
+            driver: require('@libsql/sqlite3'),
+            ...baseOpts,
+          });
         } else {
           this.dataSource = new DataSource(<DataSourceOptions>{
             url: this.options.url,
@@ -123,7 +129,7 @@ class Sql implements DatabaseDriver {
       this.timerId = setTimeout(this.ttlCleanup, this.options.ttl! * 1000);
     } else {
       console.warn(
-        'Warning: ttl cleanup not enabled, set both "ttl" and "cleanupLimit" options to enable it!'
+        `Warning: ttl cleanup not enabled in ${sqlType} with engine ${this.options.engine}, set both "ttl" and "cleanupLimit" options to enable it!`
       );
     }
 
@@ -131,19 +137,30 @@ class Sql implements DatabaseDriver {
   }
 
   async indexNamespace() {
-    const res = await this.storeRepository.find({
-      where: {
-        namespace: IsNull(),
-      },
-      select: ['key'],
-    });
-    const searchTerm = ':';
+    try {
+      const take = 1000;
+      while (true) {
+        const res = await this.storeRepository.find({
+          where: {
+            namespace: IsNull(),
+          },
+          select: ['key'],
+          take,
+        });
+        const searchTerm = ':';
 
-    for (const r of res) {
-      const key = r.key;
-      const tokens2 = key.split(searchTerm).slice(0, 2);
-      const value = tokens2.join(searchTerm);
-      await this.storeRepository.update({ key }, { namespace: value });
+        if (res.length === 0) {
+          break;
+        }
+
+        for (const r of res) {
+          const key = r.key;
+          const lastIndex = r.key.lastIndexOf(searchTerm);
+          await this.storeRepository.update({ key }, { namespace: r.key.substring(0, lastIndex) });
+        }
+      }
+    } catch (err) {
+      console.error('Error running indexNamespace:', err);
     }
   }
 

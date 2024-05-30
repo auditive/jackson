@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
-async function parseResponseContent(response: Response) {
+type RefetchFunction = () => void;
+
+export async function parseResponseContent(response: Response) {
   const responseText = await response.text();
 
   try {
@@ -10,19 +12,23 @@ async function parseResponseContent(response: Response) {
   }
 }
 
-export function useFetch<T>({ url }: { url: string }): {
+export function useFetch<T>({ url }: { url?: string }): {
   data?: T;
   isLoading: boolean;
   error: any;
+  refetch: RefetchFunction;
 } {
   const [data, setData] = useState<T>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<any>(null);
+  const [refetchIndex, setRefetchIndex] = useState<number>(0);
+
+  const refetch = () => setRefetchIndex((prevRefetchIndex) => prevRefetchIndex + 1);
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const res = await fetch(url);
+      const res = await fetch(url!);
       setIsLoading(false);
       const resContent = await parseResponseContent(res);
 
@@ -37,8 +43,10 @@ export function useFetch<T>({ url }: { url: string }): {
         setError(resContent.error);
       }
     }
-    fetchData();
-  }, [url]);
+    if (url) {
+      fetchData();
+    }
+  }, [url, refetchIndex]);
 
-  return { data, isLoading, error };
+  return { data, isLoading, error, refetch };
 }
