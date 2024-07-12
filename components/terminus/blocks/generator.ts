@@ -10,10 +10,11 @@ const IGNORE_FIELDS = [CONST_OBJ_GLB_ENCR];
 export const generateModel = (workspace, roles: string[]) => {
   ObjectMap.clear();
 
-  javascriptGenerator['data_object_field_mask'] = function (block) {
+  javascriptGenerator.forBlock['data_object_field_mask'] = function (block) {
+    currentField['mask'] = new Map();
     for (let i = 0; i < roles.length; i++) {
       const objName = block.getFieldValue(`object_type_${roles[i]}`);
-      currentField[2 + i] = objName; // mask
+      currentField['mask'][roles[i]] = objName ? objName : 'Redact'; // mask
     }
 
     javascriptGenerator.statementToCode(block, 'input');
@@ -42,10 +43,10 @@ const generateStructure = (roles: string[]) => {
       }
 
       model.attributes[field] = {
-        type: values[0],
-        encryption: values[1],
+        type: values['type'],
+        encryption: values['encryption'],
         masking: {
-          roles: rolesMap,
+          roles: values['mask'],
         },
       };
       if (IGNORE_FIELDS.includes(field)) {
@@ -57,8 +58,8 @@ const generateStructure = (roles: string[]) => {
   return model;
 };
 
-javascriptGenerator['data_object_wrapper'] = function (block) {
-  const objectName = block.getField('object_name').getText();
+javascriptGenerator.forBlock['data_object_wrapper'] = function (block) {
+  const objectName = block.getField('object_name')!.getText();
   currentObject = new Map();
   ObjectMap.set(objectName, currentObject);
 
@@ -67,8 +68,8 @@ javascriptGenerator['data_object_wrapper'] = function (block) {
   return '';
 };
 
-javascriptGenerator['data_object_wrapper_with_encryption'] = function (block) {
-  const objectName = block.getField('object_name').getText();
+javascriptGenerator.forBlock['data_object_wrapper_with_encryption'] = function (block) {
+  const objectName = block.getField('object_name')!.getText();
   // global encryption
   currentObject = new Map();
   currentObject.set(CONST_OBJ_GLB_ENCR, block.getFieldValue('encryption'));
@@ -79,9 +80,9 @@ javascriptGenerator['data_object_wrapper_with_encryption'] = function (block) {
   return '';
 };
 
-javascriptGenerator['data_object_field_wrapper'] = function (block) {
-  const objectName = block.getField('field_name').getText();
-  currentField = new Array(3);
+javascriptGenerator.forBlock['data_object_field_wrapper'] = function (block) {
+  const objectName = block.getField('object_name')!.getText();
+  currentField = new Map();
   currentObject.set(objectName, currentField);
 
   javascriptGenerator.statementToCode(block, 'input');
@@ -89,20 +90,18 @@ javascriptGenerator['data_object_field_wrapper'] = function (block) {
   return '';
 };
 
-javascriptGenerator['data_object_field_type'] = function (block) {
+javascriptGenerator.forBlock['data_object_field_type'] = function (block) {
   const objectName = block.getFieldValue('object_type');
-  currentField[0] = objectName; // type
-  currentField[2] = 'Redact'; // mask
-  currentField[3] = 'Redact'; // mask
+  currentField['type'] = objectName;
 
   javascriptGenerator.statementToCode(block, 'input');
 
   return '';
 };
 
-javascriptGenerator['data_object_field_encryption'] = function (block) {
+javascriptGenerator.forBlock['data_object_field_encryption'] = function (block) {
   const objectName = block.getFieldValue('object_type');
-  currentField[1] = objectName; // encryption
+  currentField['encryption'] = objectName; // encryption
 
   javascriptGenerator.statementToCode(block, 'input');
 

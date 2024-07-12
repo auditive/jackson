@@ -51,6 +51,7 @@ const defaultOpts = (opts: JacksonOption): JacksonOption => {
   newOpts.openid = newOpts.openid || {};
   newOpts.openid.jwsAlg = newOpts.openid.jwsAlg || 'RS256';
   newOpts.openid.requestProfileScope = newOpts.openid?.requestProfileScope ?? true;
+  newOpts.openid.forwardOIDCParams = newOpts.openid?.forwardOIDCParams ?? false;
 
   newOpts.boxyhqLicenseKey = newOpts.boxyhqLicenseKey || undefined;
 
@@ -163,9 +164,12 @@ export const controllers = async (
     await analyticsController.init();
   }
 
-  const type = opts.db.engine === 'sql' && opts.db.type ? ' Type: ' + opts.db.type : '';
-
-  console.info(`Using engine: ${opts.db.engine}.${type}`);
+  if ('driver' in opts.db) {
+    console.info(`Using external database driver`);
+  } else {
+    const type = opts.db.engine === 'sql' && opts.db.type ? ' Type: ' + opts.db.type : '';
+    console.info(`Using engine: ${opts.db.engine}.${type}`);
+  }
 
   return {
     spConfig,

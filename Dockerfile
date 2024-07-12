@@ -1,4 +1,4 @@
-ARG NODEJS_IMAGE=node:20.13.1-alpine3.19
+ARG NODEJS_IMAGE=node:20.15.1-alpine3.19
 FROM --platform=$BUILDPLATFORM $NODEJS_IMAGE AS base
 
 # Install dependencies only when needed
@@ -12,7 +12,7 @@ COPY package.json package-lock.json  ./
 COPY npm npm
 COPY internal-ui internal-ui
 COPY migrate.sh prebuild.ts ./
-RUN npm install
+RUN npm i
 RUN npm rebuild --arch=x64 --platform=linux --libc=musl sharp
 
 
@@ -29,7 +29,7 @@ COPY . .
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
@@ -40,9 +40,9 @@ WORKDIR /app
 ENV NODE_OPTIONS="--max-http-header-size=81920 --dns-result-order=ipv4first"
 
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -64,6 +64,6 @@ USER nextjs
 
 EXPOSE 5225
 
-ENV PORT 5225
+ENV PORT=5225
 
 CMD ["node", "server.js"]
