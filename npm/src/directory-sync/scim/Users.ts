@@ -66,6 +66,7 @@ export class Users extends Base {
    *     parameters:
    *       - $ref: '#/parameters/tenant'
    *       - $ref: '#/parameters/product'
+   *       - $ref: '#/parameters/directoryId'
    *       - name: userId
    *         description: User ID
    *         in: path
@@ -210,7 +211,6 @@ export class Users extends Base {
 
   // Delete all users from a directory
   async deleteAll(directoryId: string) {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { data: users } = await this.store('users').getByIndex(
         {

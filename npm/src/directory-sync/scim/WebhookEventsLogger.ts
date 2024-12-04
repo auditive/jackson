@@ -101,6 +101,8 @@ export class WebhookEventsLogger extends Base {
    *     summary: Get event logs for a directory
    *     parameters:
    *       - $ref: '#/parameters/directoryId'
+   *       - $ref: '#/parameters/tenant'
+   *       - $ref: '#/parameters/product'
    *       - $ref: '#/parameters/pageOffset'
    *       - $ref: '#/parameters/pageLimit'
    *       - $ref: '#/parameters/pageToken'
@@ -150,7 +152,6 @@ export class WebhookEventsLogger extends Base {
 
   // Delete all event logs for a directory
   async deleteAll(directoryId: string) {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { data: events } = await this.eventStore().getByIndex(
         {

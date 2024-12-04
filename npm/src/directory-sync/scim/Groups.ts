@@ -29,6 +29,24 @@ interface CreateGroupParams {
  *     in: path
  *     required: true
  *     type: string
+ *   tenant:
+ *     name: tenant
+ *     description: Tenant (Optional if directoryId is provided)
+ *     in: query
+ *     required: false
+ *     type: string
+ *   product:
+ *     name: product
+ *     in: query
+ *     description: Product (Optional if directoryId is provided)
+ *     required: false
+ *     type: string
+ *   directoryId:
+ *     name: directoryId
+ *     description: Directory ID (Optional if tenant/product is provided)
+ *     in: query
+ *     required: false
+ *     type: string
  */
 
 /**
@@ -94,6 +112,7 @@ export class Groups extends Base {
    *     parameters:
    *       - $ref: '#/parameters/tenant'
    *       - $ref: '#/parameters/product'
+   *       - $ref: '#/parameters/directoryId'
    *       - $ref: '#/parameters/groupId'
    *     tags:
    *       - Directory Sync
@@ -334,7 +353,6 @@ export class Groups extends Base {
 
   // Delete all groups from a directory
   async deleteAll(directoryId: string) {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { data: groups } = await this.store('groups').getByIndex(
         {
@@ -361,7 +379,6 @@ export class Groups extends Base {
 
   // Remove all users from a group
   public async removeAllUsers(groupId: string) {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { data: members } = await this.store('members').getByIndex(
         {

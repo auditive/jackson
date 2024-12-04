@@ -42,6 +42,7 @@ import {
   token_req_encoded_client_id_idp_saml_login,
   token_req_dummy_client_id_idp_saml_login_wrong_secretverifier,
   token_req_encoded_client_id_idp_saml_login_wrong_secretverifier,
+  calculateCodeChallenge,
 } from './fixture';
 import { addSSOConnections, jacksonOptions } from '../utils';
 import boxyhq from './data/metadata/boxyhq';
@@ -562,6 +563,7 @@ tap.test('token()', async (t) => {
         };
 
         const stubLoadJWSPrivateKey = sinon.stub(utils, 'loadJWSPrivateKey').resolves(keyPair.privateKey);
+        const stubimportJWTPublicKey = sinon.stub(utils, 'importJWTPublicKey').resolves(keyPair.publicKey);
         const stubValidate = sinon.stub(saml, 'validate').resolves({
           audience: '',
           claims: { id: 'id', firstName: 'john', lastName: 'doe', email: 'johndoe@example.com' },
@@ -611,10 +613,12 @@ tap.test('token()', async (t) => {
         stubRandomBytes.restore();
         stubValidate.restore();
         stubLoadJWSPrivateKey.restore();
+        stubimportJWTPublicKey.restore();
       });
 
       t.test('PKCE check', async (t) => {
         const authBody = authz_request_normal_with_code_challenge;
+        authBody.code_challenge = await calculateCodeChallenge();
 
         const { redirect_url } = (await oauthController.authorize(<OAuthReq>authBody)) as {
           redirect_url: string;

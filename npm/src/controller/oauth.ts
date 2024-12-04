@@ -3,10 +3,7 @@ import * as jose from 'jose';
 import { promisify } from 'util';
 import { deflateRaw } from 'zlib';
 import saml from '@boxyhq/saml20';
-import { TokenSet, errors, generators } from 'openid-client';
 import { SAMLProfile } from '@boxyhq/saml20/dist/typings';
-import { clientIDFederatedPrefix, clientIDOIDCPrefix } from './utils';
-
 import type {
   IOAuthController,
   JacksonOption,
@@ -24,11 +21,15 @@ import type {
   IdentityFederationApp,
 } from '../typings';
 import {
+  AuthorizationCodeGrantResult,
+  clientIDFederatedPrefix,
+  clientIDOIDCPrefix,
   relayStatePrefix,
   IndexNames,
   OAuthErrorResponse,
   getErrorMessage,
   loadJWSPrivateKey,
+  computeKid,
   isJWSKeyPairLoaded,
   extractOIDCUserProfile,
   getScopeValues,
@@ -44,7 +45,8 @@ import * as redirect from './oauth/redirect';
 import { getDefaultCertificate } from '../saml/x509';
 import { SSOHandler } from './sso-handler';
 import { ValidateOption, extractSAMLResponseAttributes } from '../saml/lib';
-import { oidcIssuerInstance } from './oauth/oidc-issuer';
+import * as client from 'openid-client';
+import { oidcClientConfig } from './oauth/oidc-client';
 import { App } from '../ee/identity-federation/app';
 
 const deflateRawAsync = promisify(deflateRaw);
@@ -397,25 +399,39 @@ export class OAuthController implements IOAuthController {
     let oidcNonce: string | undefined;
     if (connectionIsOIDC) {
       const { discoveryUrl, metadata, clientId, clientSecret } = (connection as OIDCSSORecord).oidcProvider;
+      const { ssoTraces } = this;
       try {
         if (!this.opts.oidcPath) {
           throw new JacksonError('OpenID response handler path (oidcPath) is not set');
         }
-        const oidcIssuer = await oidcIssuerInstance(discoveryUrl, metadata);
-        const oidcClient = new oidcIssuer.Client({
-          client_id: clientId as string,
-          client_secret: clientSecret,
-          redirect_uris: [this.opts.externalUrl + this.opts.oidcPath],
-          response_types: ['code'],
+        const oidcConfig = await oidcClientConfig({
+          discoveryUrl,
+          metadata,
+          clientId,
+          clientSecret,
+          ssoTraces: {
+            instance: ssoTraces,
+            context: {
+              tenant: requestedTenant as string,
+              product: requestedProduct as string,
+              clientID: connection.clientID,
+              requestedOIDCFlow,
+              isOIDCFederated,
+              redirectUri: redirect_uri,
+            },
+          },
         });
-        oidcCodeVerifier = generators.codeVerifier();
-        const code_challenge = generators.codeChallenge(oidcCodeVerifier);
-        oidcNonce = generators.nonce();
+        oidcCodeVerifier = client.randomPKCECodeVerifier();
+        const code_challenge = await client.calculatePKCECodeChallenge(oidcCodeVerifier);
+        oidcNonce = client.randomNonce();
         const standardScopes = this.opts.openid?.requestProfileScope
           ? ['openid', 'email', 'profile']
           : ['openid', 'email'];
         const paramsToForward = this.opts.openid?.forwardOIDCParams ? oidcParams : {};
-        ssoUrl = oidcClient.authorizationUrl({
+        if (login_hint) {
+          paramsToForward.login_hint = login_hint;
+        }
+        ssoUrl = client.buildAuthorizationUrl(oidcConfig, {
           scope: [...requestedScopes, ...standardScopes]
             .filter((value, index, self) => self.indexOf(value) === index) // filter out duplicates
             .join(' '),
@@ -423,11 +439,11 @@ export class OAuthController implements IOAuthController {
           code_challenge_method: 'S256',
           state: relayState,
           nonce: oidcNonce,
-          login_hint,
+          redirect_uri: this.opts.externalUrl + this.opts.oidcPath,
           ...paramsToForward,
-        });
+        }).href;
       } catch (err: unknown) {
-        const error_description = (err as errors.OPError)?.error || getErrorMessage(err);
+        const error_description = getErrorMessage(err);
         // Save the error trace
         const traceId = await this.ssoTraces.saveTrace({
           error: error_description,
@@ -855,21 +871,42 @@ export class OAuthController implements IOAuthController {
 
     // Reconstruct the oidcClient, code exchange for token and user profile happens here
     const { discoveryUrl, metadata, clientId, clientSecret } = oidcConnection.oidcProvider;
-    let tokenSet: TokenSet | undefined;
+    const { ssoTraces } = this;
+    let tokens: AuthorizationCodeGrantResult | undefined = undefined;
     try {
-      const oidcIssuer = await oidcIssuerInstance(discoveryUrl, metadata);
-      const oidcClient = new oidcIssuer.Client({
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uris: [this.opts.externalUrl + this.opts.oidcPath],
-        response_types: ['code'],
+      const oidcConfig = await oidcClientConfig({
+        discoveryUrl,
+        metadata,
+        clientId,
+        clientSecret,
+        ssoTraces: {
+          instance: ssoTraces,
+          context: {
+            tenant: oidcConnection.tenant,
+            product: oidcConnection.product,
+            clientID: oidcConnection.clientID,
+            providerName: oidcConnection.oidcProvider.provider,
+            redirectUri: redirect_uri,
+            relayState: RelayState,
+            isSAMLFederated,
+            isOIDCFederated,
+            acsUrl: session.requested.acsUrl,
+            entityId: session.requested.entityId,
+            requestedOIDCFlow: !!session.requested.oidc,
+            oidcIdPRequest: session?.requested?.oidcIdPRequest,
+          },
+        },
       });
-      tokenSet = await oidcClient.callback(this.opts.externalUrl + this.opts.oidcPath, callbackParams, {
-        code_verifier: session.oidcCodeVerifier,
-        nonce: session.oidcNonce,
-        state: callbackParams.state,
+      const currentUrl = new URL(
+        this.opts.externalUrl + this.opts.oidcPath + '?' + new URLSearchParams(callbackParams)
+      );
+      tokens = await client.authorizationCodeGrant(oidcConfig, currentUrl, {
+        pkceCodeVerifier: session.oidcCodeVerifier,
+        expectedNonce: session.oidcNonce,
+        expectedState: callbackParams.state,
+        idTokenExpected: true,
       });
-      profile = await extractOIDCUserProfile(tokenSet, oidcClient);
+      profile = await extractOIDCUserProfile(tokens, oidcConfig);
 
       if (isSAMLFederated) {
         const { responseForm } = await this.ssoHandler.createSAMLResponse({ profile, session });
@@ -892,9 +929,9 @@ export class OAuthController implements IOAuthController {
       await this.sessionStore.delete(RelayState);
 
       return { redirect_url: redirect.success(redirect_uri!, params) };
-    } catch (err: unknown) {
-      const { error, error_description, error_uri, session_state, scope, stack } = err as errors.OPError;
-      const error_message = getErrorMessage(err);
+    } catch (err: any) {
+      const { error, error_description, error_uri, session_state, scope, stack } = err;
+      const error_message = error_description || getErrorMessage(err);
       const traceId = await this.ssoTraces.saveTrace({
         error: error_message,
         context: {
@@ -917,7 +954,7 @@ export class OAuthController implements IOAuthController {
           session_state_from_op_error: session_state,
           scope_from_op_error: scope,
           stack,
-          oidcTokenSet: { id_token: tokenSet?.id_token, access_token: tokenSet?.access_token },
+          oidcTokenSet: { id_token: tokens?.id_token, access_token: tokens?.access_token },
         },
       });
       if (isSAMLFederated) {
@@ -1145,8 +1182,9 @@ export class OAuthController implements IOAuthController {
         groups: codeVal.profile.claims.groups,
       };
       const signingKey = await loadJWSPrivateKey(jwtSigningKeys.private, jwsAlg!);
+      const kid = await computeKid(jwtSigningKeys.public, jwsAlg!);
       const id_token = await new jose.SignJWT(claims)
-        .setProtectedHeader({ alg: jwsAlg! })
+        .setProtectedHeader({ alg: jwsAlg!, kid })
         .setIssuedAt()
         .setIssuer(this.opts.externalUrl)
         .setSubject(codeVal.profile.claims.id)

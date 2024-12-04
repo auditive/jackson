@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import * as jose from 'jose';
-import { Client, TokenSet } from 'openid-client';
+import * as client from 'openid-client';
 import saml from '@boxyhq/saml20';
 
 import * as dbutils from '../db/utils';
@@ -119,6 +119,12 @@ export const exportPublicKeyJWK = async (key: jose.KeyLike): Promise<jose.JWK> =
 export const generateJwkThumbprint = async (jwk: jose.JWK): Promise<string> => {
   const thumbprint = await jose.calculateJwkThumbprint(jwk);
   return thumbprint;
+};
+
+export const computeKid = async (key: string, jwsAlg: string): Promise<string> => {
+  const importedPublicKey = await importJWTPublicKey(key, jwsAlg!);
+  const publicKeyJWK = await exportPublicKeyJWK(importedPublicKey);
+  return await generateJwkThumbprint(publicKeyJWK);
 };
 
 export const validateSSOConnection = (
@@ -251,19 +257,26 @@ export const extractHostName = (url: string): string | null => {
   }
 };
 
-export const extractOIDCUserProfile = async (tokenSet: TokenSet, oidcClient: Client) => {
-  const idTokenClaims = tokenSet.claims();
-  const userinfo = await oidcClient.userinfo(tokenSet);
+export type AuthorizationCodeGrantResult = Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
+
+export const extractOIDCUserProfile = async (
+  tokens: AuthorizationCodeGrantResult,
+  oidcConfig: client.Configuration
+) => {
+  const idTokenClaims = tokens.claims()!;
+  const userinfo = await client.fetchUserInfo(oidcConfig, tokens.access_token, idTokenClaims.sub);
 
   const profile: { claims: Partial<Profile & { raw: Record<string, unknown> }> } = { claims: {} };
 
   profile.claims.id = idTokenClaims.sub;
-  profile.claims.email = idTokenClaims.email ?? userinfo.email;
-  profile.claims.firstName = idTokenClaims.given_name ?? userinfo.given_name;
-  profile.claims.lastName = idTokenClaims.family_name ?? userinfo.family_name;
+  profile.claims.email = typeof idTokenClaims.email === 'string' ? idTokenClaims.email : userinfo.email;
+  profile.claims.firstName =
+    typeof idTokenClaims.given_name === 'string' ? idTokenClaims.given_name : userinfo.given_name;
+  profile.claims.lastName =
+    typeof idTokenClaims.family_name === 'string' ? idTokenClaims.family_name : userinfo.family_name;
   profile.claims.roles = idTokenClaims.roles ?? (userinfo.roles as any);
   profile.claims.groups = idTokenClaims.groups ?? (userinfo.groups as any);
-  profile.claims.raw = userinfo;
+  profile.claims.raw = { ...idTokenClaims, ...userinfo };
 
   return profile;
 };
