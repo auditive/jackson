@@ -54,6 +54,9 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Fix for dynamic import of openid-client
+RUN npm i openid-client@6.1.7
+
 # Support for DB migration
 COPY --from=builder --chown=nextjs:nodejs /app/migrate.sh ./migrate.sh
 COPY npm npm
