@@ -30,7 +30,6 @@ export interface SSOConnection {
   name?: string;
   label?: string;
   description?: string;
-  ory?: OryConfig;
   sortOrder?: number | null;
 }
 
@@ -142,7 +141,6 @@ export type UpdateConnectionParams = TenantProduct & {
   defaultRedirectUrl?: string;
   redirectUrl?: string[] | string;
   deactivated?: boolean;
-  ory?: OryConfig;
   sortOrder?: number | null;
 };
 
@@ -196,13 +194,13 @@ export interface IConnectionAPIController {
 }
 
 export interface IOAuthController {
-  authorize(body: OAuthReq): Promise<{ redirect_url?: string; authorize_form?: string }>;
+  authorize(body: OAuthReq): Promise<{ redirect_url?: string; authorize_form?: string; error?: string }>;
   samlResponse(
     body: SAMLResponsePayload
-  ): Promise<{ redirect_url?: string; app_select_form?: string; response_form?: string }>;
+  ): Promise<{ redirect_url?: string; app_select_form?: string; response_form?: string; error?: string }>;
   oidcAuthzResponse(
     body: OIDCAuthzResponsePayload
-  ): Promise<{ redirect_url?: string; response_form?: string }>;
+  ): Promise<{ redirect_url?: string; response_form?: string; error?: string }>;
   token(body: OAuthTokenReq): Promise<OAuthTokenRes>;
   userInfo(token: string): Promise<Profile>;
 }
@@ -503,10 +501,11 @@ export interface JacksonOption {
   /**  The number of days a setup link is valid for. Defaults to 3 days. */
   setupLinkExpiryDays?: number;
   boxyhqHosted?: boolean;
-
-  ory?: {
-    projectId: string | undefined;
-    sdkToken: string | undefined;
+  ssoTraces?: SSOTracesOption;
+  logger?: {
+    info?: (msg: string, err?: any) => void;
+    warn?: (msg: string, err?: any) => void;
+    error?: (msg: string, err?: any) => void;
   };
 }
 
@@ -649,6 +648,21 @@ export interface ProductConfig {
   primaryColor: string | null;
   faviconUrl: string | null;
   companyName: string | null;
-  ory: OryConfig | null;
   development?: boolean;
 }
+
+export interface SSOTracesOption {
+  disable?: boolean;
+  redact?: boolean;
+  ttl?: number;
+}
+
+export type RequiredLogger = {
+  info: (msg: string, err?: any) => void;
+  error: (msg: string, err?: any) => void;
+  warn: (msg: string, err?: any) => void;
+};
+
+export type JacksonOptionWithRequiredLogger = Omit<JacksonOption, 'logger'> & {
+  logger: RequiredLogger;
+};
