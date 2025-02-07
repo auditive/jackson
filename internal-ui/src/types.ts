@@ -7,7 +7,7 @@ export interface ApiError extends Error {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 enum DirectorySyncProviders {
-  'azure-scim-v2' = 'Azure SCIM v2.0',
+  'azure-scim-v2' = 'Entra ID SCIM v2.0',
   'onelogin-scim-v2' = 'OneLogin SCIM v2.0',
   'okta-scim-v2' = 'Okta SCIM v2.0',
   'jumpcloud-scim-v2' = 'JumpCloud v2.0',
@@ -152,6 +152,7 @@ export interface SSOTrace extends Omit<Trace, 'traceId' | 'timestamp'> {
     stack?: string;
     oidcTokenSet?: { id_token?: string; access_token?: string };
     oidcIdPRequest?: OIDCIdPInitiatedReq;
+    oAuthStage?: 'token_fetch' | 'userinfo_fetch';
   };
 }
 
