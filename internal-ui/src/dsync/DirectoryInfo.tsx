@@ -36,7 +36,7 @@ export const DirectoryInfo = ({
 
   const authorizedGoogle =
     directory?.google_authorized || (directory?.google_access_token && directory?.google_refresh_token);
-  const hideInfo = excludeFields.length === 4 && directory.type != 'google';
+  const hideInfo = excludeFields.length === 4 && directory.type !== 'google';
 
   return (
     <>
@@ -106,12 +106,6 @@ export const DirectoryInfo = ({
                     ) : (
                       <Badge color='warning'>{t('bui-dsync-not-authorized')}</Badge>
                     )}
-                  </dd>
-                </div>
-                <div className='px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6'>
-                  <dt className='text-sm font-medium text-gray-500'>{t('bui-dsync-google-domain')}</dt>
-                  <dd className='mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0'>
-                    {directory.google_domain || '-'}
                   </dd>
                 </div>
               </>

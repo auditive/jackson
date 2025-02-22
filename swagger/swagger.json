@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Enterprise SSO & Directory Sync",
-    "version": "1.37.1",
+    "version": "1.39.2",
     "description": "This is the API documentation for SAML Jackson service.",
     "termsOfService": "https://boxyhq.com/terms.html",
     "contact": {
@@ -1513,10 +1513,6 @@
                     "type": "string",
                     "description": "If true, the directory connection will be deactivated"
                   },
-                  "google_domain": {
-                    "type": "string",
-                    "description": "Google domain"
-                  },
                   "google_access_token": {
                     "type": "string",
                     "description": "Google access token"
@@ -1551,10 +1547,6 @@
                   "deactivated": {
                     "type": "string",
                     "description": "If true, the directory connection will be deactivated"
-                  },
-                  "google_domain": {
-                    "type": "string",
-                    "description": "Google domain"
                   },
                   "google_access_token": {
                     "type": "string",
