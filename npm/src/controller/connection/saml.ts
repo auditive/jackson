@@ -75,6 +75,7 @@ const saml = {
       description,
       metadataUrl,
       identifierFormat,
+      acsUrlOverride,
     } = body;
     const forceAuthn = body.forceAuthn == 'true' || body.forceAuthn == true;
 
@@ -106,6 +107,7 @@ const saml = {
       identifierFormat,
       metadataUrl,
       sortOrder: parseInt(body.sortOrder as any),
+      acsUrlOverride,
     };
 
     let metadata = rawMetadata as string;
@@ -317,6 +319,10 @@ const saml = {
 
     if ('identifierFormat' in body) {
       record['identifierFormat'] = body.identifierFormat;
+    }
+
+    if ('acsUrlOverride' in body) {
+      record['acsUrlOverride'] = body.acsUrlOverride;
     }
 
     const oryRes = await oryController.updateConnection(

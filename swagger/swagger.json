@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Enterprise SSO & Directory Sync",
-    "version": "1.39.3",
+    "version": "1.40.2",
     "description": "This is the API documentation for SAML Jackson service.",
     "termsOfService": "https://boxyhq.com/terms.html",
     "contact": {
@@ -113,6 +113,10 @@
                     "type": "number",
                     "description": "Indicate the position of the connection in the IdP selection screen"
                   },
+                  "acsUrlOverride": {
+                    "type": "string",
+                    "description": "URL to override the set ACS URL per connection basis"
+                  },
                   "forceAuthn": {
                     "type": "boolean",
                     "description": "Require a new authentication instead of reusing an existing session."
@@ -192,6 +196,10 @@
                   "sortOrder": {
                     "type": "number",
                     "description": "Indicate the position of the connection in the IdP selection screen"
+                  },
+                  "acsUrlOverride": {
+                    "type": "string",
+                    "description": "URL to override the set ACS URL per connection basis"
                   },
                   "forceAuthn": {
                     "type": "boolean",
@@ -315,6 +323,10 @@
                     "type": "number",
                     "description": "Indicate the position of the connection in the IdP selection screen"
                   },
+                  "acsUrlOverride": {
+                    "type": "string",
+                    "description": "URL to override the set ACS URL per connection basis"
+                  },
                   "forceAuthn": {
                     "type": "boolean",
                     "description": "Require a new authentication instead of reusing an existing session."
@@ -406,6 +418,10 @@
                   "sortOrder": {
                     "type": "number",
                     "description": "Indicate the position of the connection in the IdP selection screen"
+                  },
+                  "acsUrlOverride": {
+                    "type": "string",
+                    "description": "URL to override the set ACS URL per connection basis"
                   },
                   "forceAuthn": {
                     "type": "boolean",
@@ -2476,6 +2492,10 @@
           "sortOrder": {
             "type": "number",
             "description": "Connection sort order"
+          },
+          "acsUrlOverride": {
+            "type": "string",
+            "description": "URL to override the set ACS URL per connection basis"
           }
         },
         "example": {

@@ -10,7 +10,6 @@ import loadConnection from './loadConnection';
 import { AdminController } from './controller/admin';
 import { ConnectionAPIController } from './controller/api';
 import { OAuthController } from './controller/oauth';
-import { HealthCheckController } from './controller/health-check';
 import { LogoutController } from './controller/logout';
 import initDirectorySync from './directory-sync';
 import { OidcDiscoveryController } from './controller/oidc-discovery';
@@ -29,9 +28,7 @@ import { OryController } from './ee/ory/ory';
 const TRACES_TTL_DEFAULT = 7 * 24 * 60 * 60;
 
 const defaultOpts = (opts: JacksonOption): JacksonOptionWithRequiredLogger => {
-  const newOpts = {
-    ...opts,
-  };
+  const newOpts = { ...opts };
 
   if (!newOpts.externalUrl) {
     throw new Error('externalUrl is required');
@@ -39,6 +36,10 @@ const defaultOpts = (opts: JacksonOption): JacksonOptionWithRequiredLogger => {
 
   if (!newOpts.samlPath) {
     throw new Error('samlPath is required');
+  }
+
+  if (!newOpts.acsUrl) {
+    newOpts.acsUrl = newOpts.externalUrl + newOpts.samlPath;
   }
 
   newOpts.scimPath = newOpts.scimPath || '/api/scim/v2.0';
@@ -82,7 +83,6 @@ export const controllers = async (
   oauthController: OAuthController;
   adminController: AdminController;
   logoutController: LogoutController;
-  healthCheckController: HealthCheckController;
   setupLinkController: SetupLinkController;
   directorySyncController: IDirectorySyncController;
   oidcDiscoveryController: OidcDiscoveryController;
@@ -102,7 +102,6 @@ export const controllers = async (
   const sessionStore = db.store('oauth:session', opts.db.ttl);
   const codeStore = db.store('oauth:code', opts.db.ttl);
   const tokenStore = db.store('oauth:token', opts.db.ttl);
-  const healthCheckStore = db.store('_health:check');
   const setupLinkStore = db.store('setup:link');
   const certificateStore = db.store('x509:certificates');
   const settingsStore = db.store('portal:settings');
@@ -124,8 +123,6 @@ export const controllers = async (
     oryController,
   });
   const adminController = new AdminController({ connectionStore, ssoTraces });
-  const healthCheckController = new HealthCheckController({ healthCheckStore });
-  await healthCheckController.init();
   const setupLinkController = new SetupLinkController({ setupLinkStore, opts });
 
   // Create default certificate if it doesn't exist.
@@ -149,11 +146,7 @@ export const controllers = async (
     idFedApp: identityFederationController.app,
   });
 
-  const logoutController = new LogoutController({
-    connectionStore,
-    sessionStore,
-    opts,
-  });
+  const logoutController = new LogoutController({ connectionStore, sessionStore, opts });
 
   const oidcDiscoveryController = new OidcDiscoveryController({ opts });
   const spConfig = new SPSSOConfig(opts);
@@ -207,7 +200,6 @@ export const controllers = async (
     oauthController,
     adminController,
     logoutController,
-    healthCheckController,
     setupLinkController,
     directorySyncController,
     oidcDiscoveryController,
