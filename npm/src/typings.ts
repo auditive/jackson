@@ -33,6 +33,7 @@ export interface SSOConnection {
   ory?: OryConfig;
   sortOrder?: number | null;
   acsUrlOverride?: string;
+  samlAudienceOverride?: string;
 }
 
 export interface SAMLSSOConnection extends SSOConnection {
@@ -139,6 +140,7 @@ export type UpdateSAMLConnectionParams = UpdateConnectionParams & {
   forceAuthn?: boolean;
   identifierFormat?: string;
   acsUrlOverride?: string;
+  samlAudienceOverride?: string;
 };
 
 export type UpdateOIDCConnectionParams = UpdateConnectionParams & {
@@ -448,7 +450,6 @@ export interface JacksonOption {
   boxyhqLicenseKey?: string;
   retraced?: { host?: string; adminToken?: string };
   noAnalytics?: boolean;
-  terminus?: { host?: string; adminToken?: string };
   webhook?: Webhook;
   dsync?: {
     webhookBatchSize?: number;

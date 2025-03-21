@@ -91,7 +91,10 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *           description: Connection sort order
    *         acsUrlOverride:
    *           type: string
-   *           description: URL to override the set ACS URL per connection basis
+   *           description: Override the global ACS URL on a per connection basis
+   *         samlAudienceOverride:
+   *           type: string
+   *           description: Override the global SAML Audience on a per connection basis
    *       example:
    *         idpMetadata:
    *           sso:
@@ -114,7 +117,7 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *     validationErrorsPost:
    *       description: Please provide rawMetadata or encodedRawMetadata | Please provide a defaultRedirectUrl | Please provide redirectUrl | redirectUrl is invalid | Exceeded maximum number of allowed redirect urls | defaultRedirectUrl is invalid | Please provide tenant | Please provide product | Please provide a friendly name | Description should not exceed 100 characters | Strategy&#58; xxxx not supported | Please provide the clientId from OpenID Provider | Please provide the clientSecret from OpenID Provider | Please provide the discoveryUrl for the OpenID Provider
    *     validationErrorsPatch:
-   *       description: Please provide clientID | Please provide clientSecret | clientSecret mismatch | Tenant/Product config mismatch with IdP metadata | Description should not exceed 100 characters| redirectUrl is invalid | Exceeded maximum number of allowed redirect urls | defaultRedirectUrl is invalid | Tenant/Product config mismatch with OIDC Provider metadata
+   *       description: Please provide clientID/clientSecret | clientSecret mismatch | Tenant/Product config mismatch with IdP metadata | Description should not exceed 100 characters| redirectUrl is invalid | Exceeded maximum number of allowed redirect urls | defaultRedirectUrl is invalid | Tenant/Product config mismatch with OIDC Provider metadata
    *   responses:
    *     200Get:
    *       description: Success
@@ -220,68 +223,6 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *     operationId: create-sso-connection
    *     requestBody:
    *       content:
-   *         application/x-www-form-urlencoded:
-   *           schema:
-   *             required:
-   *               - defaultRedirectUrl
-   *               - product
-   *               - redirectUrl
-   *               - tenant
-   *             type: object
-   *             properties:
-   *               name:
-   *                 type: string
-   *                 description: Name of connection
-   *               label:
-   *                 type: string
-   *                 description: An internal label to identify the connection
-   *               description:
-   *                 type: string
-   *                 description: A short description for the connection not more than 100 characters
-   *               encodedRawMetadata:
-   *                 type: string
-   *                 description: Base64 encoding of the XML metadata
-   *               rawMetadata:
-   *                 type: string
-   *                 description: Raw XML metadata
-   *               metadataUrl:
-   *                 type: string
-   *                 description: URL containing raw XML metadata
-   *               defaultRedirectUrl:
-   *                 type: string
-   *                 description: The redirect URL to use in the IdP login flow
-   *               redirectUrl:
-   *                 type: array
-   *                 items:
-   *                   type: string
-   *                 description: JSON encoded array containing a list of allowed redirect URLs
-   *               tenant:
-   *                 type: string
-   *                 description: Tenant
-   *               product:
-   *                 type: string
-   *                 description: Product
-   *               oidcDiscoveryUrl:
-   *                 type: string
-   *                 description: well-known URL where the OpenID Provider configuration is exposed
-   *               oidcMetadata:
-   *                 type: string
-   *                 description: metadata (JSON) for the OpenID Provider in the absence of discoveryUrl
-   *               oidcClientId:
-   *                 type: string
-   *                 description: clientId of the application set up on the OpenID Provider
-   *               oidcClientSecret:
-   *                 type: string
-   *                 description: clientSecret of the application set up on the OpenID Provider
-   *               sortOrder:
-   *                 type: number
-   *                 description: Indicate the position of the connection in the IdP selection screen
-   *               acsUrlOverride:
-   *                 type: string
-   *                 description: URL to override the set ACS URL per connection basis
-   *               forceAuthn:
-   *                 type: boolean
-   *                 description: Require a new authentication instead of reusing an existing session.
    *         application/json:
    *           schema:
    *             required:
@@ -340,7 +281,10 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *                 description: Indicate the position of the connection in the IdP selection screen
    *               acsUrlOverride:
    *                 type: string
-   *                 description: URL to override the set ACS URL per connection basis
+   *                 description: Override the global ACS URL on a per connection basis
+   *               samlAudienceOverride:
+   *                 type: string
+   *                 description: Override the global SAML Audience on a per connection basis
    *               forceAuthn:
    *                 type: boolean
    *                 description: Require a new authentication instead of reusing an existing session.
@@ -469,78 +413,10 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *                 description: Indicate the position of the connection in the IdP selection screen
    *               acsUrlOverride:
    *                 type: string
-   *                 description: URL to override the set ACS URL per connection basis
-   *               forceAuthn:
-   *                 type: boolean
-   *                 description: Require a new authentication instead of reusing an existing session.
-   *         application/x-www-form-urlencoded:
-   *           schema:
-   *             required:
-   *               - clientID
-   *               - clientSecret
-   *               - product
-   *               - tenant
-   *             type: object
-   *             properties:
-   *               clientID:
+   *                 description: Override the global ACS URL on a per connection basis
+   *               samlAudienceOverride:
    *                 type: string
-   *                 description: Client ID for the connection
-   *               clientSecret:
-   *                 type: string
-   *                 description: Client Secret for the connection
-   *               name:
-   *                 type: string
-   *                 description: Name/identifier for the connection
-   *               label:
-   *                 type: string
-   *                 description: An internal label to identify the connection
-   *               description:
-   *                 type: string
-   *                 description: A short description for the connection not more than 100 characters
-   *               encodedRawMetadata:
-   *                 type: string
-   *                 description: Base64 encoding of the XML metadata
-   *               rawMetadata:
-   *                 type: string
-   *                 description: Raw XML metadata
-   *               metadataUrl:
-   *                 type: string
-   *                 description: URL containing raw XML metadata
-   *               oidcDiscoveryUrl:
-   *                 type: string
-   *                 description: well-known URL where the OpenID Provider configuration is exposed
-   *               oidcMetadata:
-   *                 type: string
-   *                 description: metadata (JSON) for the OpenID Provider in the absence of discoveryUrl
-   *               oidcClientId:
-   *                 type: string
-   *                 description: clientId of the application set up on the OpenID Provider
-   *               oidcClientSecret:
-   *                 type: string
-   *                 description: clientSecret of the application set up on the OpenID Provider
-   *               defaultRedirectUrl:
-   *                 type: string
-   *                 description: The redirect URL to use in the IdP login flow
-   *               redirectUrl:
-   *                 type: array
-   *                 items:
-   *                   type: string
-   *                 description: JSON encoded array containing a list of allowed redirect URLs
-   *               tenant:
-   *                 type: string
-   *                 description: Tenant
-   *               product:
-   *                 type: string
-   *                 description: Product
-   *               deactivated:
-   *                 type: boolean
-   *                 description: Connection status
-   *               sortOrder:
-   *                 type: number
-   *                 description: Indicate the position of the connection in the IdP selection screen
-   *               acsUrlOverride:
-   *                 type: string
-   *                 description: URL to override the set ACS URL per connection basis
+   *                 description: Override the global SAML Audience on a per connection basis
    *               forceAuthn:
    *                 type: boolean
    *                 description: Require a new authentication instead of reusing an existing session.

@@ -76,6 +76,7 @@ const saml = {
       metadataUrl,
       identifierFormat,
       acsUrlOverride,
+      samlAudienceOverride,
     } = body;
     const forceAuthn = body.forceAuthn == 'true' || body.forceAuthn == true;
 
@@ -108,6 +109,7 @@ const saml = {
       metadataUrl,
       sortOrder: parseInt(body.sortOrder as any),
       acsUrlOverride,
+      samlAudienceOverride,
     };
 
     let metadata = rawMetadata as string;
@@ -224,20 +226,11 @@ const saml = {
       ...clientInfo
     } = body;
 
-    if (!clientInfo?.clientID) {
-      throw new JacksonError('Please provide clientID', 400);
-    }
-
-    if (!clientInfo?.clientSecret) {
-      throw new JacksonError('Please provide clientSecret', 400);
-    }
-
-    if (!clientInfo?.tenant) {
-      throw new JacksonError('Please provide tenant', 400);
-    }
-
-    if (!clientInfo?.product) {
-      throw new JacksonError('Please provide product', 400);
+    if (
+      !(clientInfo?.clientID && clientInfo?.clientSecret) &&
+      !(clientInfo?.tenant && clientInfo?.product && clientInfo?.clientSecret)
+    ) {
+      throw new JacksonError('Please provide clientID/clientSecret or tenant/product/clientSecret', 400);
     }
 
     if (description && description.length > 100) {
@@ -325,6 +318,10 @@ const saml = {
       record['acsUrlOverride'] = body.acsUrlOverride;
     }
 
+    if ('samlAudienceOverride' in body) {
+      record['samlAudienceOverride'] = body.samlAudienceOverride;
+    }
+
     const oryRes = await oryController.updateConnection(
       {
         sdkToken: undefined,
@@ -341,7 +338,7 @@ const saml = {
     }
 
     await connectionStore.put(
-      clientInfo?.clientID,
+      clientInfo?.clientID || _savedConnection.clientID,
       record,
       {
         // secondary index on entityID
