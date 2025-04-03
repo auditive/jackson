@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import saml20 from '@boxyhq/saml20';
 import axios from 'axios';
+import ipaddr from 'ipaddr.js';
 
 import {
   IConnectionAPIController,
@@ -20,6 +21,8 @@ import {
   validateTenantAndProduct,
   isLocalhost,
   validateSortOrder,
+  isHTTPS,
+  validateSSOURL,
 } from '../utils';
 import { JacksonError } from '../error';
 import { OryController } from '../../ee/ory/ory';
@@ -49,12 +52,52 @@ function validateParsedMetadata(metadata: SAMLSSORecord['idpMetadata']) {
   if (!metadata.sso.redirectUrl && !metadata.sso.postUrl) {
     throw new JacksonError("Couldn't find SAML bindings for POST/REDIRECT", 400);
   }
+
+  if (metadata.sso.redirectUrl) {
+    validateSSOURL(metadata.sso.redirectUrl);
+  }
+  if (metadata.sso.postUrl) {
+    validateSSOURL(metadata.sso.postUrl);
+  }
+}
+
+function isPrivateIP(url: string): boolean {
+  let ip: string;
+  let addr: ipaddr.IPv4 | ipaddr.IPv6;
+
+  try {
+    const givenURL = new URL(url);
+    ip = givenURL.host.split(':')[0];
+
+    addr = ipaddr.parse(ip);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (err) {
+    return false;
+  }
+
+  const kind = addr.kind();
+  const range = addr.range();
+
+  if (kind === 'ipv4') {
+    if (range === 'private') {
+      throw new JacksonError('Metadata URL not valid, private IPs are not allowed', 400);
+    }
+  } else if (kind === 'ipv6') {
+    if (range === 'uniqueLocal') {
+      throw new JacksonError('Metadata URL not valid, private IPs are not allowed', 400);
+    }
+  }
+
+  return false;
 }
 
 function validateMetadataURL(metadataUrl: string) {
-  if (!isLocalhost(metadataUrl) && !metadataUrl.startsWith('https')) {
+  if (!isLocalhost(metadataUrl) && !isHTTPS(metadataUrl)) {
     throw new JacksonError('Metadata URL not valid, allowed ones are localhost/HTTPS URLs', 400);
   }
+
+  return !isPrivateIP(metadataUrl);
 }
 
 const saml = {
