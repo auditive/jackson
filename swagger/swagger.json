@@ -2,17 +2,16 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Enterprise SSO & Directory Sync",
-    "version": "1.46.0",
-    "description": "This is the API documentation for SAML Jackson service.",
-    "termsOfService": "https://boxyhq.com/terms.html",
+    "version": "1.52.0",
+    "description": "This is the API documentation for Polis.",
+    "termsOfService": "/tos",
     "contact": {
-      "name": "Boxy HQ",
-      "url": "https://boxyhq.com/",
-      "email": "support@boxyhq.com"
+      "email": "support@ory.sh",
+      "name": "Polis API Support"
     },
     "license": {
-      "name": "Apache-2.0 License",
-      "url": "https://github.com/boxyhq/jackson/blob/main/LICENSE"
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     }
   },
   "security": [
@@ -21,10 +20,6 @@
     }
   ],
   "servers": [
-    {
-      "url": "https://api.eu.boxyhq.com",
-      "description": "Cloud"
-    },
     {
       "url": "http://localhost:5225",
       "description": "Local"
@@ -2198,13 +2193,13 @@
               "id": "038e767b-9bc6-4dbd-975e-fbc38a8e7d82",
               "first_name": "Deepak",
               "last_name": "Prabhakara",
-              "email": "deepak@boxyhq.com",
+              "email": "deepak@example.com",
               "active": true,
               "raw": {
                 "schemas": [
                   "urn:ietf:params:scim:schemas:core:2.0:User"
                 ],
-                "userName": "deepak@boxyhq.com",
+                "userName": "deepak@example.com",
                 "name": {
                   "givenName": "Deepak",
                   "familyName": "Prabhakara"
@@ -2212,7 +2207,7 @@
                 "emails": [
                   {
                     "primary": true,
-                    "value": "deepak@boxyhq.com",
+                    "value": "deepak@example.com",
                     "type": "work"
                   }
                 ],
@@ -2272,7 +2267,7 @@
           "mappings": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/AttributeMapping"
             },
             "description": "Mapping of attributes from the IdP to SP"
           },
@@ -2289,6 +2284,10 @@
               "type": "string"
             },
             "description": "If creating an OIDC app, provide the redirect URL"
+          },
+          "samlAudienceOverride": {
+            "type": "string",
+            "description": "Override the SAML Audience on a per app basis"
           }
         }
       },
@@ -2310,6 +2309,19 @@
             }
           }
         ]
+      },
+      "AttributeMapping": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "SP attribute"
+          },
+          "value": {
+            "type": "string",
+            "description": "IdP attribute"
+          }
+        }
       },
       "IdentityFederationResponse": {
         "type": "object",

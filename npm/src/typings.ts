@@ -30,7 +30,6 @@ export interface SSOConnection {
   name?: string;
   label?: string;
   description?: string;
-  ory?: OryConfig;
   sortOrder?: number | null;
   acsUrlOverride?: string;
   samlAudienceOverride?: string;
@@ -129,7 +128,6 @@ export type UpdateConnectionParams = TenantProduct & {
   defaultRedirectUrl?: string;
   redirectUrl?: string[] | string;
   deactivated?: boolean;
-  ory?: OryConfig;
   sortOrder?: number | null;
 };
 
@@ -448,7 +446,6 @@ export interface JacksonOption {
   };
   certs?: { publicKey: string; privateKey: string };
   boxyhqLicenseKey?: string;
-  retraced?: { host?: string; adminToken?: string };
   noAnalytics?: boolean;
   webhook?: Webhook;
   dsync?: {
@@ -471,7 +468,6 @@ export interface JacksonOption {
   setupLinkExpiryDays?: number;
   boxyhqHosted?: boolean;
 
-  ory?: { projectId: string | undefined; sdkToken: string | undefined };
   ssoTraces?: SSOTracesOption;
   logger?: {
     info?: (msg: string, err?: any) => void;
@@ -540,8 +536,7 @@ export interface ISPSSOConfig {
     publicKey: string;
     publicKeyString: string;
   }>;
-  toMarkdown(): string;
-  toXMLMetadata(boolean?): Promise<string>;
+  toXMLMetadata(boolean?, string?): Promise<string>;
 }
 
 export interface ApiError {
@@ -609,7 +604,6 @@ export interface ProductConfig {
   primaryColor: string | null;
   faviconUrl: string | null;
   companyName: string | null;
-  ory: OryConfig | null;
   development?: boolean;
 }
 

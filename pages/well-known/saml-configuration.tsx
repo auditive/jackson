@@ -25,7 +25,7 @@ const SPConfig: NextPage<InferGetStaticPropsType<typeof getServerSideProps>> = (
                 components={{
                   guideLink: (
                     <a
-                      href='https://boxyhq.com/docs/jackson/sso-providers'
+                      href='https://www.ory.sh/docs/polis/sso-providers'
                       target='_blank'
                       rel='noreferrer'
                       className='underline underline-offset-4'>
@@ -97,13 +97,19 @@ const SPConfig: NextPage<InferGetStaticPropsType<typeof getServerSideProps>> = (
   );
 };
 
-export const getServerSideProps = async ({ locale }) => {
+export const getServerSideProps = async ({ locale, query }) => {
   const { spConfig } = await jackson();
+  const { entityId } = query as { entityId?: string };
+
+  const config = await spConfig.get();
+  if (entityId) {
+    config.entityId = entityId;
+  }
 
   return {
     props: {
       ...(await serverSideTranslations(locale, ['common'])),
-      config: await spConfig.get(),
+      config,
     },
   };
 };

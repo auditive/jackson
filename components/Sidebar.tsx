@@ -8,15 +8,14 @@ import Logo from '../public/logo.png';
 import { useTranslation } from 'next-i18next';
 import SSOLogo from '@components/logo/SSO';
 import DSyncLogo from '@components/logo/DSync';
-import AuditLogsLogo from '@components/logo/AuditLogs';
 import Cog8ToothIcon from '@heroicons/react/24/outline/Cog8ToothIcon';
 
 type SidebarProps = {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   branding: any;
-  hideAuditLogs: boolean;
   hideIdentityFederation: boolean;
+  hideDirectorySync: boolean;
 };
 
 type MenuItem = {
@@ -31,8 +30,8 @@ export const Sidebar = ({
   isOpen,
   setIsOpen,
   branding,
-  hideAuditLogs,
   hideIdentityFederation,
+  hideDirectorySync,
 }: SidebarProps) => {
   const { t } = useTranslation('common');
   const { asPath } = useRouter();
@@ -83,6 +82,7 @@ export const Sidebar = ({
       ],
     },
     {
+      hide: 'directorySync',
       href: '/admin/directory-sync',
       text: t('directory_sync'),
       icon: DSyncLogo,
@@ -98,21 +98,6 @@ export const Sidebar = ({
           href: '/admin/directory-sync/setup-link',
           text: t('setup_links'),
           active: asPath.includes('/admin/directory-sync/setup-link'),
-        },
-      ],
-    },
-    {
-      hide: 'identityFederation',
-      href: '/admin/retraced',
-      text: t('audit_logs'),
-      icon: AuditLogsLogo,
-      current: asPath.includes('retraced'),
-      active: asPath.includes('/admin/retraced'),
-      items: [
-        {
-          href: '/admin/retraced',
-          text: t('projects'),
-          active: asPath.includes('/admin/retraced'),
         },
       ],
     },
@@ -138,8 +123,8 @@ export const Sidebar = ({
 
   menus = menus.filter(
     (menu) =>
-      !(menu.hide === 'auditLogs' && hideAuditLogs) &&
-      !(menu.hide === 'identityFederation' && hideIdentityFederation)
+      !(menu.hide === 'identityFederation' && hideIdentityFederation) &&
+      !(menu.hide === 'directorySync' && hideDirectorySync)
   );
 
   return (
