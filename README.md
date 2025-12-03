@@ -13,10 +13,10 @@
 ---
 
 <p align="left">
-    <a href="https://github.com/ory/polis/actions/workflows/main.yml"><img src="https://github.com/ory/polis/actions/workflows/main.yml/badge.svg?branch=master&event=push" alt="CI Tasks for Ory polis"></a>
-    <a href="https://codecov.io/gh/ory/polis"><img src="https://codecov.io/gh/ory/polis/branch/master/graph/badge.svg?token=6t0QqOdurR"/></a>
+    <a href="https://github.com/ory/polis/actions/workflows/main.yml"><img src="https://github.com/ory/polis/actions/workflows/main.yml/badge.svg?branch=main&event=push" alt="CI Tasks for Ory polis"></a>
+    <a href="https://codecov.io/gh/ory/polis"><img src="https://codecov.io/gh/ory/polis/branch/main/graph/badge.svg?token=6t0QqOdurR"/></a>
     <a href="https://bestpractices.coreinfrastructure.org/projects/4979"><img src="https://bestpractices.coreinfrastructure.org/projects/4979/badge" alt="CII Best Practices"></a>
-    <a href="https://github.com/ory/polis/blob/master/CODE_OF_CONDUCT.md" alt="Ory Code of Conduct"><img src="https://img.shields.io/badge/ory-code%20of%20conduct-green" /></a>
+    <a href="https://github.com/ory/polis/blob/main/CODE_OF_CONDUCT.md" alt="Ory Code of Conduct"><img src="https://img.shields.io/badge/ory-code%20of%20conduct-green" /></a>
 </>
 
 Ory Polis - formerly known as BoxyHQ Jackson - bridges or proxies a SAML login flow to OAuth 2.0 or OpenID Connect, abstracting away all the complexities of the SAML protocol. It also supports Directory Sync via the SCIM 2.0 protocol for automatic user and group provisioning/de-provisioning. Ory Polis also supports OpenID Connect providers.
@@ -86,8 +86,8 @@ For complete documentation, visit the [Ory Polis documentation](https://ory.sh/d
   - [Installation](#installation)
 - [Ecosystem](#ecosystem)
   - [Ory Kratos: Identity and User Infrastructure and Management](#ory-kratos-identity-and-user-infrastructure-and-management)
-  - [Ory Hydra: OAuth2 & OpenID Connect Server](#ory-hydra-oauth2--openid-connect-server)
-  - [Ory Oathkeeper: Identity & Access Proxy](#ory-oathkeeper-identity--access-proxy)
+  - [Ory Hydra: OAuth2 \& OpenID Connect Server](#ory-hydra-oauth2--openid-connect-server)
+  - [Ory Oathkeeper: Identity \& Access Proxy](#ory-oathkeeper-identity--access-proxy)
   - [Ory Keto: Access Control Policies as a Server](#ory-keto-access-control-policies-as-a-server)
 - [End-to-End (E2E) tests](#end-to-end-e2e-tests)
 - [Security](#security)

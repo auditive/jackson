@@ -69,9 +69,7 @@ function isPrivateIP(url: string): boolean {
     ip = givenURL.host.split(':')[0];
 
     addr = ipaddr.parse(ip);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (err) {
+  } catch {
     return false;
   }
 
@@ -158,7 +156,6 @@ const saml = {
       metadata = Buffer.from(encodedRawMetadata, 'base64').toString();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     metadataUrl && validateMetadataURL(metadataUrl);
 
     metadata = metadataUrl ? await fetchMetadata(metadataUrl) : metadata;
@@ -278,7 +275,6 @@ const saml = {
       metadata = Buffer.from(encodedRawMetadata, 'base64').toString();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     metadataUrl && validateMetadataURL(metadataUrl);
 
     metadata = metadataUrl ? await fetchMetadata(metadataUrl) : metadata;

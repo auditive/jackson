@@ -138,7 +138,13 @@ export class SSOHandler {
 
         if (oidcConfig.serverMetadata().issuer === thirdPartyLogin.iss) {
           if (thirdPartyLogin.target_link_uri) {
-            if (!allowed.redirect(thirdPartyLogin.target_link_uri, connection.redirectUrl as string[])) {
+            if (
+              !allowed.redirect(
+                thirdPartyLogin.target_link_uri,
+                connection.redirectUrl as string[],
+                this.opts.openid?.redirectExactMatch
+              )
+            ) {
               throw new JacksonError('target_link_uri is not allowed');
             }
           }

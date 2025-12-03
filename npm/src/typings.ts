@@ -231,7 +231,7 @@ export interface IOidcDiscoveryController {
 
 export interface OAuthReqBody {
   state: string;
-  response_type: 'code';
+  response_type: 'code' | 'token';
   redirect_uri: string;
   code_challenge: string;
   code_challenge_method: 'plain' | 'S256' | '';
@@ -443,6 +443,7 @@ export interface JacksonOption {
     requestProfileScope?: boolean; // defaults to true
     forwardOIDCParams?: boolean; // defaults to false
     subjectPrefix?: boolean; // defaults to false
+    redirectExactMatch?: boolean; // defaults to false
   };
   certs?: { publicKey: string; privateKey: string };
   boxyhqLicenseKey?: string;
@@ -475,6 +476,7 @@ export interface JacksonOption {
     error?: (msg: string, err?: any) => void;
   };
   flattenRawClaims?: boolean;
+  jsonErrorPage?: boolean;
 }
 
 export interface SLORequestParams {

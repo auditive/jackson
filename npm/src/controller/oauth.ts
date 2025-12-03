@@ -246,9 +246,21 @@ export class OAuthController implements IOAuthController {
       connectionIsOIDC = 'oidcProvider' in connection && connection.oidcProvider !== undefined;
       protocol = isOIDCFederated ? 'oidc-federation' : connectionIsSAML ? 'saml' : 'oidc';
 
-      if (!allowed.redirect(redirect_uri, connection.redirectUrl as string[])) {
+      if (
+        !allowed.redirect(
+          redirect_uri,
+          connection.redirectUrl as string[],
+          this.opts.openid?.redirectExactMatch
+        )
+      ) {
         if (fedApp) {
-          if (!allowed.redirect(redirect_uri, fedApp.redirectUrl as string[])) {
+          if (
+            !allowed.redirect(
+              redirect_uri,
+              fedApp.redirectUrl as string[],
+              this.opts.openid?.redirectExactMatch
+            )
+          ) {
             throw new JacksonError('Redirect URL is not allowed.', 403);
           }
         } else {
@@ -737,10 +749,20 @@ export class OAuthController implements IOAuthController {
       if (
         session &&
         session.redirect_uri &&
-        !allowed.redirect(session.redirect_uri, connection.redirectUrl as string[])
+        !allowed.redirect(
+          session.redirect_uri,
+          connection.redirectUrl as string[],
+          this.opts.openid?.redirectExactMatch
+        )
       ) {
         if (isOIDCFederated) {
-          if (!allowed.redirect(session.redirect_uri, session.oidcFederated?.redirectUrl as string[])) {
+          if (
+            !allowed.redirect(
+              session.redirect_uri,
+              session.oidcFederated?.redirectUrl as string[],
+              this.opts.openid?.redirectExactMatch
+            )
+          ) {
             throw new JacksonError('Redirect URL is not allowed.', 403);
           }
         } else {
@@ -909,9 +931,22 @@ export class OAuthController implements IOAuthController {
           throw new JacksonError('Redirect URL from the authorization request could not be retrieved', 403);
         }
 
-        if (redirect_uri && !allowed.redirect(redirect_uri, oidcConnection.redirectUrl as string[])) {
+        if (
+          redirect_uri &&
+          !allowed.redirect(
+            redirect_uri,
+            oidcConnection.redirectUrl as string[],
+            this.opts.openid?.redirectExactMatch
+          )
+        ) {
           if (isOIDCFederated) {
-            if (!allowed.redirect(redirect_uri, session.oidcFederated?.redirectUrl as string[])) {
+            if (
+              !allowed.redirect(
+                redirect_uri,
+                session.oidcFederated?.redirectUrl as string[],
+                this.opts.openid?.redirectExactMatch
+              )
+            ) {
               throw new JacksonError('Redirect URL is not allowed.', 403);
             }
           } else {

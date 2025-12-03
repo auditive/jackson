@@ -4,8 +4,13 @@ import {
   JacksonOptionWithRequiredLogger,
   Storable,
 } from '../typings';
-import Mixpanel, { type Event } from 'mixpanel';
+import Mixpanel from 'mixpanel';
 import { randomUUID } from 'crypto';
+
+type Event = {
+  event: string;
+  properties: Record<string, unknown>;
+};
 
 const idKey = 'heartbeat';
 const sentKey = 'lastSent';
@@ -14,7 +19,7 @@ export class AnalyticsController {
   analyticsStore: Storable;
   connectionAPIController: IConnectionAPIController;
   directorySyncController: IDirectorySyncController;
-  client: Mixpanel.Mixpanel;
+  client: ReturnType<typeof Mixpanel.init>;
   anonymousId: string;
   private opts: JacksonOptionWithRequiredLogger;
 

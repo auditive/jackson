@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16.4
+    image: postgres:18.1
     ports:
       - 5432:5432
     restart: always
@@ -8,17 +8,17 @@ services:
       POSTGRES_PASSWORD: ''
       POSTGRES_HOST_AUTH_METHOD: trust
   redis:
-    image: redis:7.4-alpine
+    image: redis:8.4-alpine
     ports:
       - 6379:6379
     restart: always
   mongo:
-    image: mongo:7.0.12
+    image: mongo:8.2.2
     ports:
       - 27017:27017
     restart: always
   mysql:
-    image: mysql:8.4.2
+    image: mysql:9.5.0
     ports:
       - 3307:3306
     restart: always
@@ -26,7 +26,7 @@ services:
       MYSQL_DATABASE: mysql
       MYSQL_ROOT_PASSWORD: mysql
   maria:
-    image: mariadb:11.5.2
+    image: mariadb:12.1.2
     ports:
       - 3306:3306
     restart: always
@@ -34,7 +34,7 @@ services:
       MARIADB_DATABASE: mysql
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-latest
+    image: mcr.microsoft.com/mssql/server:2025-latest
     platform: linux/amd64
     ports:
       - 1433:1433
@@ -44,7 +44,7 @@ services:
       SA_PASSWORD: '123ABabc!'
   dynamodb-local:
     command: '-jar DynamoDBLocal.jar -sharedDb -dbPath ./data'
-    image: 'amazon/dynamodb-local:2.5.2'
+    image: 'amazon/dynamodb-local:3.1.0'
     container_name: dynamodb-local
     ports:
       - '8000:8000'
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./docker/libsql:/var/lib/sqld
   cockroachdb:
-    image: cockroachdb/cockroach:v24.3.0
+    image: cockroachdb/cockroach:latest-v25.3
     platform: linux/amd64
     ports:
       - '26257:26257'
