@@ -13,7 +13,7 @@ services:
       - 6379:6379
     restart: always
   mongo:
-    image: mongo:8.2.2
+    image: mongo:8.2.4
     ports:
       - 27017:27017
     restart: always
@@ -44,7 +44,7 @@ services:
       SA_PASSWORD: '123ABabc!'
   dynamodb-local:
     command: '-jar DynamoDBLocal.jar -sharedDb -dbPath ./data'
-    image: 'amazon/dynamodb-local:3.1.0'
+    image: 'amazon/dynamodb-local:3.3.0'
     container_name: dynamodb-local
     ports:
       - '8000:8000'
@@ -63,7 +63,7 @@ services:
     volumes:
       - ./docker/libsql:/var/lib/sqld
   cockroachdb:
-    image: cockroachdb/cockroach:latest-v25.3
+    image: cockroachdb/cockroach:latest-v25.4
     platform: linux/amd64
     ports:
       - '26257:26257'
