@@ -22,25 +22,25 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "vite-tsconfig-paths": "6.0.5"
+    "vite-tsconfig-paths": "6.1.1"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "12.3.0",
-    "@types/node": "24.10.9",
-    "@types/react": "19.2.10",
-    "@typescript-eslint/eslint-plugin": "8.54.0",
-    "@typescript-eslint/parser": "8.54.0",
+    "@types/node": "24.10.13",
+    "@types/react": "19.2.14",
+    "@typescript-eslint/eslint-plugin": "8.56.1",
+    "@typescript-eslint/parser": "8.56.1",
     "@vitejs/plugin-react": "4.7.0",
-    "eslint": "9.39.2",
+    "eslint": "9.39.3",
     "eslint-plugin-react-hooks": "7.0.1",
-    "eslint-plugin-react-refresh": "0.5.0",
+    "eslint-plugin-react-refresh": "0.5.2",
     "prettier": "3.8.1",
     "rsc-daisyui": "2.3.0",
     "typescript": "5.9.3",
     "vite": "6.4.1"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.57.1"
+    "@rollup/rollup-linux-x64-gnu": "4.59.0"
   },
   "peerDependencies": {
     "@boxyhq/react-ui": ">=3.5.2",
