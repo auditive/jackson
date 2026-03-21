@@ -12,6 +12,17 @@ import { Login as SSOLogin } from '@boxyhq/react-ui/sso';
 import { adminPortalSSODefaults } from '@lib/env';
 import { getPortalBranding } from '@ee/branding/utils';
 
+const isValidRedirectPath = (path) => {
+  try {
+    // Parse relative paths correctly by providing the current origin as the base
+    const url = new URL(path, window.location.origin);
+    // Ensure the origin matches AND the scheme is either http: or https:
+    return url.origin === window.location.origin && (url.protocol === 'http:' || url.protocol === 'https:');
+  } catch {
+    return false;
+  }
+};
+
 const Login = ({
   csrfToken,
   tenant,
@@ -38,7 +49,7 @@ const Login = ({
   }
 
   if (status === 'authenticated') {
-    router.push(callbackUrl);
+    router.push(isValidRedirectPath(callbackUrl) ? callbackUrl : '/');
     return;
   }
 

@@ -185,13 +185,8 @@ const saml = {
 
     if (existing.length > 0) {
       for (let i = 0; i < existing.length; i++) {
-        const samlConfig = existing[i];
-        if (samlConfig.tenant !== tenant && samlConfig.product === product) {
-          throw new JacksonError('EntityID already exists for different tenant/product');
-        } else if (samlConfig.tenant !== tenant && samlConfig.product !== product) {
-          throw new JacksonError('EntityID already exists for different tenant/product');
-        } else {
-          continue;
+        if (existing[i].tenant !== tenant) {
+          throw new JacksonError('EntityID already exists for different tenant');
         }
       }
     }
