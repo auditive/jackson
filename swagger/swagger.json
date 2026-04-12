@@ -347,7 +347,7 @@
             "$ref": "#/components/responses/401Get"
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       },
       "delete": {
         "tags": [
@@ -443,7 +443,7 @@
             "$ref": "#/components/responses/401Get"
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/oauth/token": {
@@ -589,7 +589,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/sso/setuplinks": {
@@ -924,7 +924,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/sso/setuplinks/product": {
@@ -1001,7 +1001,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/sso-traces": {
@@ -1033,7 +1033,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/sso-traces/product": {
@@ -1080,7 +1080,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync": {
@@ -1181,7 +1181,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/{directoryId}": {
@@ -1213,7 +1213,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       },
       "patch": {
         "tags": [
@@ -1354,7 +1354,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/groups/{groupId}": {
@@ -1410,7 +1410,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/groups": {
@@ -1463,7 +1463,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/groups/{groupId}/members": {
@@ -1515,7 +1515,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/users/{userId}": {
@@ -1571,7 +1571,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/users": {
@@ -1624,7 +1624,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/dsync/events": {
@@ -1677,7 +1677,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     },
     "/api/v1/identity-federation": {
@@ -1759,7 +1759,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       },
       "patch": {
         "tags": [
@@ -1898,7 +1898,7 @@
             }
           }
         },
-        "x-ory-ratelimit-bucket": "polis-public-low"
+        "x-ory-ratelimit-bucket": "polis-public-high"
       }
     }
   },

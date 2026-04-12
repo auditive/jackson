@@ -209,6 +209,301 @@ const requests = {
     };
   },
 
+  // Entra: clear filter-path attributes by setting to empty string
+  entraClearFilterPathAttributes: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'phoneNumbers[type eq "work"].value',
+            value: '',
+          },
+          {
+            op: 'replace',
+            path: 'addresses[type eq "work"].streetAddress',
+            value: '',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Remove custom attributes using op: "remove" (Entra may use this to clear fields)
+  removeCustomAttributes: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'remove',
+            path: 'companyName',
+          },
+          {
+            op: 'remove',
+            path: 'address.streetAddress',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Remove standard mapped attributes using op: "remove" (name.givenName, name.familyName)
+  removeStandardMappedAttributes: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'remove',
+            path: 'name.givenName',
+          },
+          {
+            op: 'remove',
+            path: 'name.familyName',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Remove standard attribute using op: "remove" with no value
+  removeTitle: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'remove',
+            path: 'title',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra enterprise extension: set a custom field via the extension schema (no-path format)
+  entraSetExtensionAttribute: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': {
+                department: 'Engineering',
+                costCenter: 'CC-1234',
+              },
+            },
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra enterprise extension: clear a custom field via the extension schema (no-path format)
+  entraClearExtensionAttribute: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': {
+                department: '',
+                costCenter: '',
+              },
+            },
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra enterprise extension: set then clear via path-based format
+  entraSetExtensionViaPath: (directory: Directory, userId: string, value: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department',
+            value,
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra: clear multi-valued attribute by replacing with empty array
+  entraClearMultiValuedAttribute: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'phoneNumbers',
+            value: [],
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Clear custom attributes by setting them to empty string (Entra clears fields this way)
+  clearCustomAttributes: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            path: 'companyName',
+            value: '',
+          },
+          {
+            op: 'replace',
+            path: 'address.streetAddress',
+            value: '',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Clear custom attributes via object value (no path, Entra alternate format)
+  clearCustomAttributesViaObject: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              title: '',
+              displayName: '',
+            },
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // PUT request that omits a previously-set custom field (full replacement)
+  updateByIdWithoutCustomField: (directory: Directory, userId: string, user: any): DirectorySyncRequest => {
+    return {
+      method: 'PUT',
+      body: user,
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra: set extension multi-valued attribute via URN path
+  entraSetExtensionMultiValued: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'replace',
+            value: {
+              'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': {
+                roles: [
+                  { value: 'admin-role-id', display: 'Admin' },
+                  { value: 'user-role-id', display: 'User' },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
+  // Entra: remove a specific value from extension multi-valued attribute via URN + filter path
+  entraRemoveExtensionFilterPath: (directory: Directory, userId: string): DirectorySyncRequest => {
+    return {
+      method: 'PATCH',
+      body: {
+        Operations: [
+          {
+            op: 'remove',
+            path: 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:roles[value eq "admin-role-id"]',
+          },
+        ],
+      },
+      directoryId: directory.id,
+      resourceType: 'users',
+      resourceId: userId,
+      apiSecret: directory.scim.secret,
+      query: {},
+    };
+  },
+
   // Arbitrary attribute names with SCIM filter paths (e.g. ims, photos)
   arbitraryFilterPaths: (directory: Directory, userId: string): DirectorySyncRequest => {
     return {

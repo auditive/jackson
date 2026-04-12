@@ -28,7 +28,7 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
   if (id) {
     const setupLink = await setupLinkController.get(id);
 
-    res.json({ data: setupLink });
+    return res.json({ data: setupLink });
   }
 
   // Get by tenant + product
@@ -39,8 +39,10 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse) => {
       service,
     });
 
-    res.json({ data: setupLinks[0] });
+    return res.json({ data: setupLinks[0] });
   }
+
+  return res.status(400).json({ error: { message: 'Please provide either id or tenant and product' } });
 };
 
 // Create a setup link

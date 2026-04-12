@@ -56,7 +56,7 @@ const handlePATCH = async (req: NextApiRequest, res: NextApiResponse) => {
   const { data, error } = await directorySyncController.directories.update(directoryId, body);
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 
   res.json({ data });

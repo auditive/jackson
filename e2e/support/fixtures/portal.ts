@@ -42,7 +42,7 @@ export class Portal {
   async doCredentialsLogin() {
     await this.page.goto('/admin/auth/login');
 
-    const email = await this.page.getByPlaceholder('Email');
+    const email = this.page.getByPlaceholder('Email');
     await email.waitFor({ state: 'visible', timeout: 20000 });
     await email.fill('super@boxyhq.com');
 
@@ -53,9 +53,5 @@ export class Portal {
   async isLoggedIn() {
     // assert login state
     await expect(this.userAvatarLocator).toBeVisible();
-  }
-
-  async isLoggedInSoft(): Promise<boolean> {
-    return this.userAvatarLocator.isVisible();
   }
 }

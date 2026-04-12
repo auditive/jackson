@@ -19,7 +19,7 @@
     "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
-    "downlevelIteration": true,
+    "rootDir": ".",
   },
   "include": ["./src/**/*"],
   "exclude": ["node_modules"],

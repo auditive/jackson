@@ -15,7 +15,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return await handleGET(req, res, setupLink);
       default:
         res.setHeader('Allow', 'GET');
-        res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
+        return res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
     }
   } catch (err: any) {
     const { message, statusCode = 500 } = err;
@@ -34,16 +34,16 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse, setupLink: a
   });
 
   if (!connections || connections.length === 0) {
-    res.status(404).json({ error: { message: 'Connection not found.' } });
+    return res.status(404).json({ error: { message: 'Connection not found.' } });
   }
 
   const connection = connections[0];
 
   if (connection.tenant !== setupLink.tenant || connection.product !== setupLink.product) {
-    res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
+    return res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
   }
 
-  res.json([
+  return res.json([
     {
       clientID: connection.clientID,
       clientSecret: connection.clientSecret,

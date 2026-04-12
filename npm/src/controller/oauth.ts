@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { promisify } from 'util';
 import { deflateRaw } from 'zlib';
 import saml from '@boxyhq/saml20';
-import { validateSSOURL } from './utils';
+import { validateSSOURL, sigAlg, signQueryString } from './utils';
 import { SAMLProfile } from '@boxyhq/saml20/dist/typings';
 import type {
   IOAuthController,
@@ -359,7 +359,7 @@ export class OAuthController implements IOAuthController {
     const sessionId = crypto.randomBytes(16).toString('hex');
     const relayState = relayStatePrefix + sessionId;
     // SAML connection: SAML request will be constructed here
-    let samlReq, internalError;
+    let samlReq, samlReqSigningKey: string | undefined, internalError;
     if (connectionIsSAML) {
       try {
         const { sso, provider } = (connection as SAMLSSORecord).idpMetadata;
@@ -406,19 +406,24 @@ export class OAuthController implements IOAuthController {
 
         const cert = await getDefaultCertificate();
 
-        samlReq = saml.request({
+        const samlRequestOpts = {
           ssoUrl,
           entityID: connection.samlAudienceOverride
             ? connection.samlAudienceOverride
             : this.opts.samlAudience!,
           callbackUrl: connection.acsUrlOverride ? connection.acsUrlOverride : (this.opts.acsUrl as string),
-          signingKey: cert.privateKey,
-          publicKey: cert.publicKey,
           forceAuthn: forceAuthn === 'true' ? true : !!(connection as SAMLSSORecord).forceAuthn,
           identifierFormat: (connection as SAMLSSORecord).identifierFormat
             ? (connection as SAMLSSORecord).identifierFormat
             : 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-        });
+        };
+
+        // For HTTP-POST, embed signature in the XML body
+        // For HTTP-Redirect, leave XML unsigned (query string is signed instead)
+        samlReq = post
+          ? saml.request({ ...samlRequestOpts, signingKey: cert.privateKey, publicKey: cert.publicKey })
+          : saml.request({ ...samlRequestOpts, signingKey: '', publicKey: '' });
+        samlReqSigningKey = cert.privateKey;
       } catch (err: unknown) {
         const error_description = getErrorMessage(err);
         this.opts.logger.error(`Authorize error: ${error_description} `);
@@ -596,13 +601,19 @@ export class OAuthController implements IOAuthController {
         let authorizeForm;
 
         if (!post) {
-          // HTTP Redirect binding
+          // HTTP-Redirect: sign the query string, not the XML body
+          const encodedRequest = Buffer.from(await deflateRawAsync(samlReq.request)).toString('base64');
+          const queryToSign = `SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(relayState)}&SigAlg=${encodeURIComponent(sigAlg)}`;
+          const signature = signQueryString(queryToSign, samlReqSigningKey!);
+
           redirectUrl = redirect.success(ssoUrl, {
+            SAMLRequest: encodedRequest,
             RelayState: relayState,
-            SAMLRequest: Buffer.from(await deflateRawAsync(samlReq.request)).toString('base64'),
+            SigAlg: sigAlg,
+            Signature: signature,
           });
         } else {
-          // HTTP POST binding
+          // HTTP-POST: signature is already embedded in the XML
           authorizeForm = saml.createPostForm(ssoUrl, [
             { name: 'RelayState', value: relayState },
             { name: 'SAMLRequest', value: Buffer.from(samlReq.request).toString('base64') },
@@ -1423,7 +1434,7 @@ export class OAuthController implements IOAuthController {
 
       // delete the code
       try {
-        await this.codeStore.delete(code);
+        await this.codeStore.delete(codes[1]);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_err) {
         // ignore error
@@ -1493,7 +1504,7 @@ export class OAuthController implements IOAuthController {
    *                 lastName: Jackson
    *                 raw: {}
    *                 requested: {}
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async userInfo(token: string): Promise<Profile> {
     const tokens = token.split('.');

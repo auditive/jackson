@@ -314,7 +314,7 @@ export class App {
    *           application/json:
    *             schema:
    *               $ref: "#/components/schemas/IdentityFederationResponse"
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async get(params: AppRequestParams) {
     await throwIfInvalidLicense(this.opts.boxyhqLicenseKey);
@@ -376,7 +376,7 @@ export class App {
    *                   pageToken:
    *                     type: string
    *                     description: token for pagination
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getByProduct({ product, pageOffset, pageLimit, pageToken }: GetByProductParams) {
     await throwIfInvalidLicense(this.opts.boxyhqLicenseKey);

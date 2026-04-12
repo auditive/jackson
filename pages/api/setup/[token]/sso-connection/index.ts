@@ -57,7 +57,7 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse, setupLink: a
     };
   });
 
-  res.json(_connections);
+  return res.json(_connections);
 };
 
 const handlePOST = async (req: NextApiRequest, res: NextApiResponse, setupLink: any) => {
@@ -80,7 +80,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse, setupLink: 
     throw { message: 'Missing SSO connection params', statusCode: 400 };
   }
 
-  res.status(201).json({ data: null });
+  return res.status(201).json({ data: null });
 };
 
 const handleDELETE = async (req: NextApiRequest, res: NextApiResponse, setupLink: any) => {
@@ -100,7 +100,7 @@ const handleDELETE = async (req: NextApiRequest, res: NextApiResponse, setupLink
 
   await connectionAPIController.deleteConnections({ clientID, clientSecret });
 
-  res.json({ data: null });
+  return res.json({ data: null });
 };
 
 const handlePATCH = async (req: NextApiRequest, res: NextApiResponse, setupLink: any) => {

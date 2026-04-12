@@ -448,3 +448,12 @@ export const validateSortOrder = (sortOrder: unknown) => {
     throw new JacksonError('The field `sortOrder` must be a number greater than or equal to 0.', 400);
   }
 };
+
+export const sigAlg = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256';
+
+// Sign the query string with RSA-SHA256 (for HTTP-Redirect binding)
+export const signQueryString = (queryString: string, signingKey: string): string => {
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(queryString);
+  return signer.sign(signingKey, 'base64');
+};

@@ -17,7 +17,7 @@ import { getDefaultCertificate } from '../saml/x509';
 import * as dbutils from '../db/utils';
 import { JacksonError } from './error';
 import { dynamicImport, GENERIC_ERR_STRING, IndexNames } from './utils';
-import { relayStatePrefix } from './utils';
+import { relayStatePrefix, sigAlg, signQueryString } from './utils';
 import * as redirect from './oauth/redirect';
 import * as allowed from './oauth/allowed';
 import { oidcClientConfig } from './oauth/oidc-client';
@@ -221,17 +221,25 @@ export class SSOHandler {
         post = true;
       }
 
-      const samlRequest = saml.request({
+      const samlRequestOpts = {
         ssoUrl,
         entityID: connection.samlAudienceOverride ? connection.samlAudienceOverride : this.opts.samlAudience!,
         callbackUrl: connection.acsUrlOverride ? connection.acsUrlOverride : (this.opts.acsUrl as string),
-        signingKey: certificate.privateKey,
-        publicKey: certificate.publicKey,
         forceAuthn: !!connection.forceAuthn,
         identifierFormat: connection.identifierFormat
           ? connection.identifierFormat
           : 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
-      });
+      };
+
+      // For HTTP-POST, embed signature in the XML body
+      // For HTTP-Redirect, leave XML unsigned (query string is signed instead)
+      const samlRequest = post
+        ? saml.request({
+            ...samlRequestOpts,
+            signingKey: certificate.privateKey,
+            publicKey: certificate.publicKey,
+          })
+        : saml.request({ ...samlRequestOpts, signingKey: '', publicKey: '' });
 
       const relayState = await this.createSession({
         requestId: samlRequest.id,
@@ -242,13 +250,20 @@ export class SSOHandler {
       let redirectUrl;
       let authorizeForm;
 
-      // Decide whether to use HTTP Redirect or HTTP POST binding
       if (!post) {
+        // HTTP-Redirect: sign the query string, not the XML body
+        const encodedRequest = Buffer.from(await deflateRawAsync(samlRequest.request)).toString('base64');
+        const queryToSign = `SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(relayState)}&SigAlg=${encodeURIComponent(sigAlg)}`;
+        const signature = signQueryString(queryToSign, certificate.privateKey);
+
         redirectUrl = redirect.success(ssoUrl, {
+          SAMLRequest: encodedRequest,
           RelayState: relayState,
-          SAMLRequest: Buffer.from(await deflateRawAsync(samlRequest.request)).toString('base64'),
+          SigAlg: sigAlg,
+          Signature: signature,
         });
       } else {
+        // HTTP-POST: signature is already embedded in the XML
         authorizeForm = saml.createPostForm(ssoUrl, [
           { name: 'RelayState', value: relayState },
           { name: 'SAMLRequest', value: Buffer.from(samlRequest.request).toString('base64') },

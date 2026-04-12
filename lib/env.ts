@@ -109,6 +109,7 @@ const jacksonOptions: JacksonOption = {
   ssoTraces,
   flattenRawClaims: process.env.FLATTEN_RAW_CLAIMS === 'true',
   jsonErrorPage: process.env.JSON_ERROR_PAGE === 'true',
+  authnRequestsSigned: true,
 };
 
 const adminPortalSSODefaults = {

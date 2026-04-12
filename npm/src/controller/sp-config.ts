@@ -65,6 +65,7 @@ export class SPSSOConfig {
       acsUrl: acsUrlOverride ? acsUrlOverride : acsUrl,
       publicKeyString,
       encryption,
+      authnRequestsSigned: this.opts.authnRequestsSigned,
     });
   }
 }

@@ -80,6 +80,21 @@ test.describe('GET /api/v1/dsync', () => {
 });
 
 test.describe('PATCH /api/v1/dsync/{directoryId}', () => {
+  // Regression: PATCH with a non-existent directoryId must return a single error
+  // response without falling through to the success path (double response).
+  test('should return error for non-existent directoryId without double response', async ({ request }) => {
+    const response = await request.patch('/api/v1/dsync/non-existent-id', {
+      data: { name: 'updated' },
+    });
+
+    expect(response.ok()).toBe(false);
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+
+    const body = await response.json();
+    expect(body.error).toBeDefined();
+    expect(body.data).toBeUndefined();
+  });
+
   test('should be able update', async ({ request, baseURL }) => {
     const directories = await getDirectory(request, { tenant, product });
     const directory = directories[0];

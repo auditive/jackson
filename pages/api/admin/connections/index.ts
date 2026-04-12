@@ -66,10 +66,8 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
   if (isSAML) {
     const connection = await connectionAPIController.createSAMLConnection(req.body);
     res.status(201).json({ data: connection });
-  }
-
-  // Create OIDC connection
-  else {
+  } else {
+    // Create OIDC connection
     const connection = await connectionAPIController.createOIDCConnection(oidcMetadataParse(req.body));
     res.status(201).json({ data: connection });
   }
@@ -89,10 +87,8 @@ const handlePATCH = async (req: NextApiRequest, res: NextApiResponse) => {
   if (isSAML) {
     await connectionAPIController.updateSAMLConnection(req.body);
     res.status(204).end();
-  }
-
-  // Update OIDC connection
-  else {
+  } else {
+    // Update OIDC connection
     await connectionAPIController.updateOIDCConnection(oidcMetadataParse(req.body));
     res.status(204).end();
   }

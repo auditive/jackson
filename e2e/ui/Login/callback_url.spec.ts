@@ -1,21 +1,32 @@
 import { expect, test as baseTest } from '@playwright/test';
 import { Portal } from 'e2e/support/fixtures';
 
-type MyFixtures = {
+type WorkerFixtures = {
   portal: Portal;
+  baseURL: string;
 };
 
-export const test = baseTest.extend<MyFixtures>({
-  portal: async ({ page }, use) => {
-    const portal = new Portal(page);
-    await page.goto('/admin');
-    if (!(await portal.isLoggedInSoft())) {
+export const test = baseTest.extend<{}, WorkerFixtures>({
+  portal: [
+    async ({ browser }, use) => {
+      const ctx = await browser.newContext({
+        baseURL: 'http://localhost:5225',
+        storageState: {
+          cookies: [],
+          origins: [],
+        },
+      });
+      const page = await ctx.newPage();
+      const portal = new Portal(page);
+      await page.goto('/admin');
       await portal.doCredentialsLogin();
       await portal.isLoggedIn();
-    }
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    await use(portal);
-  },
+      await use(portal);
+
+      await ctx.close();
+    },
+    { scope: 'worker' },
+  ],
 });
 
 test.describe('Admin Portal Login callback URL validation', () => {

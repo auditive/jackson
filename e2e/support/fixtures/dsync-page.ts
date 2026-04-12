@@ -31,15 +31,17 @@ export class DSyncPage {
   async deleteConnection() {
     await this.gotoDSync();
     await this.page.getByLabel('Loading').waitFor({ state: 'hidden' });
-    const editButton = await this.page.getByRole('button').and(this.page.getByLabel('Edit'));
-    await editButton.click();
+    const row = this.page.getByRole('row', { name: /DS-1/ }).first();
+    await row.getByLabel('Edit').click();
     await this.page.getByRole('button', { name: 'Delete' }).click();
     await this.page.getByRole('button', { name: 'Confirm' }).click();
   }
 
   async switchToDSyncInfoView() {
     await this.gotoDSync();
-    await this.page.getByLabel('View').click();
+    await this.page.getByLabel('Loading').waitFor({ state: 'hidden' });
+    const row = this.page.getByRole('row', { name: /DS-1/ }).first();
+    await row.getByLabel('View').click();
     await this.page.waitForURL('/admin/directory-sync/**');
   }
 
@@ -77,7 +79,8 @@ export class DSyncPage {
       const regex = new RegExp(`^\\/api\\/.*\\/directory-sync\\/${directory.id}$`);
       return regex.test(new URL(response.url()).pathname) && response.status() === 200;
     });
-    await this.page.getByLabel('Edit').click();
+    const row = this.page.getByRole('row', { name: /DS-1/ }).first();
+    await row.getByLabel('Edit').click();
     // Wait for the directory fetch to finish and then interact with the checkbox
     await responsePromise;
     const checkBox = await this.page.getByLabel('Enable Webhook events logging');

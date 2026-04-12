@@ -139,9 +139,9 @@ export type PaginationParams = {
 };
 
 export type UserPatchOperation = {
-  op: 'replace' | 'add';
+  op: 'replace' | 'add' | 'remove';
   path?: string;
-  value:
+  value?:
     | boolean
     | {
         active: boolean;

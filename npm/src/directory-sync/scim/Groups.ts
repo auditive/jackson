@@ -129,7 +129,7 @@ export class Groups extends Base {
    *           application/json:
    *             schema:
    *               $ref: "#/components/schemas/Group"
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async get(id: string): Promise<Response<Group>> {
     try {
@@ -263,7 +263,7 @@ export class Groups extends Base {
    *                  pageToken:
    *                    type: string
    *                    description: token for pagination
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getAll(
     params: PaginationParams & {
@@ -320,7 +320,7 @@ export class Groups extends Base {
    *                    type: array
    *                    items:
    *                      $ref: '#/components/schemas/Member'
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getGroupMembers(
     parmas: { groupId: string } & PaginationParams

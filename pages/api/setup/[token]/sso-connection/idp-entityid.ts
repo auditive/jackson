@@ -16,7 +16,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return await handleGET(req, res, setupLink);
       default:
         res.setHeader('Allow', 'GET');
-        res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
+        return res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
     }
   } catch (err: any) {
     const { message, statusCode = 500 } = err;

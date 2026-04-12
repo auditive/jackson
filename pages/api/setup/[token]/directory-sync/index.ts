@@ -19,7 +19,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return await handleGET(req, res, setupLink);
       default:
         res.setHeader('Allow', 'PUT');
-        res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
+        return res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
     }
   } catch (err: any) {
     const { message, statusCode = 500 } = err;
@@ -48,7 +48,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse, setupLink: 
   const { data, error } = await directorySyncController.directories.create(directory);
 
   if (data) {
-    res.status(201).json({
+    return res.status(201).json({
       data: {
         id: data.id,
       },
@@ -56,7 +56,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse, setupLink: 
   }
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 };
 
@@ -79,11 +79,11 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse, setupLink: S
       };
     });
 
-    res.json({ data: directories });
+    return res.json({ data: directories });
   }
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 };
 

@@ -9,9 +9,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     directorySyncController.events.batch.process();
 
-    res.json({ message: 'Processing started' });
+    return res.json({ message: 'Processing started' });
   } catch (e: any) {
-    res.status(500).json({ message: e.message || 'Processing failed' });
+    return res.status(500).json({ message: e.message || 'Processing failed' });
   }
 };
 

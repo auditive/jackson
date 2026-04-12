@@ -9,9 +9,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     directorySyncController.sync();
 
-    res.json({ message: 'Sync started' });
+    return res.json({ message: 'Sync started' });
   } catch (e: any) {
-    res.status(500).json({ message: e.message || 'Sync failed' });
+    return res.status(500).json({ message: e.message || 'Sync failed' });
   }
 };
 

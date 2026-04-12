@@ -170,7 +170,7 @@ const Login = ({
                           />
                         </label>
                         <ButtonOutline
-                          loading={loading && authMethod === 'credentials'}
+                          loading={loading && authMethod === 'credentials' ? 'true' : 'false'}
                           className='btn-block'
                           type='submit'>
                           {t('sign_in')}
@@ -191,7 +191,7 @@ const Login = ({
                   components={{
                     docLink: (
                       <a
-                        href='https://www.ory.sh/docs/polis/admin-portal'
+                        href='https://www.ory.com/docs/polis/admin-portal'
                         target='_blank'
                         rel='noopener noreferrer'
                         className='underline underline-offset-2'>
@@ -206,7 +206,7 @@ const Login = ({
             <div className='mt-10 flex flex-col gap-3'>
               {isMagicLinkEnabled && (
                 <ButtonOutline
-                  loading={loading && authMethod === 'email'}
+                  loading={loading && authMethod === 'email' ? 'true' : 'false'}
                   className='btn-block'
                   onClick={onMagicLinkLogin}
                   type='button'>

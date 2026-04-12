@@ -7,7 +7,7 @@ import saml from '@boxyhq/saml20';
 import { JacksonOption, SAMLConnection, SAMLResponsePayload, SLORequestParams, Storable } from '../typings';
 import { JacksonError } from './error';
 import * as redirect from './oauth/redirect';
-import { IndexNames } from './utils';
+import { IndexNames, sigAlg, signQueryString } from './utils';
 import { getDefaultCertificate } from '../saml/x509';
 
 const deflateRawAsync = promisify(deflateRaw);
@@ -70,23 +70,30 @@ export class LogoutController {
     let logoutForm: string | null = null;
 
     const relayState = relayStatePrefix + sessionId;
-    const signedXML = await signXML(xml, privateKey, publicKey);
 
     await this.sessionStore.put(sessionId, {
       id,
       redirectUrl,
     });
 
-    // HTTP-Redirect binding
+    // HTTP-Redirect binding: sign the query string, not the XML body
     if ('redirectUrl' in slo) {
+      const encodedRequest = Buffer.from(await deflateRawAsync(xml)).toString('base64');
+      const queryToSign = `SAMLRequest=${encodeURIComponent(encodedRequest)}&RelayState=${encodeURIComponent(relayState)}&SigAlg=${encodeURIComponent(sigAlg)}`;
+      const signature = signQueryString(queryToSign, privateKey);
+
       logoutUrl = redirect.success(slo.redirectUrl as string, {
-        SAMLRequest: Buffer.from(await deflateRawAsync(signedXML)).toString('base64'),
+        SAMLRequest: encodedRequest,
         RelayState: relayState,
+        SigAlg: sigAlg,
+        Signature: signature,
       });
     }
 
-    // HTTP-POST binding
+    // HTTP-POST binding: embed the signature in the XML body
     if ('postUrl' in slo) {
+      const signedXML = saml.sign(xml, privateKey, publicKey, logoutXPath);
+
       logoutForm = saml.createPostForm(slo.postUrl as string, [
         {
           name: 'RelayState',
@@ -152,8 +159,3 @@ export class LogoutController {
     };
   }
 }
-
-// Sign the XML
-const signXML = async (xml: string, signingKey: string, publicKey: string): Promise<string> => {
-  return await saml.sign(xml, signingKey, publicKey, logoutXPath);
-};

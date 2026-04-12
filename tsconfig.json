@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "target": "es5",
+    "target": "es6",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -11,14 +11,13 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
     "experimentalDecorators": true,
     "baseUrl": ".",
-    "downlevelIteration": true,
     "paths": {
       "react": ["./node_modules/@types/react"],
       "@components/*": ["components/*"],
@@ -32,6 +31,7 @@
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS",
+      "moduleResolution": "node",
     },
     "require": ["tsconfig-paths/register"],
   },

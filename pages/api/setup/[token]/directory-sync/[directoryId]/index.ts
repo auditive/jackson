@@ -19,7 +19,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return await handleDELETE(req, res, setupLink);
       default:
         res.setHeader('Allow', 'PATCH, GET, DELETE');
-        res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
+        return res.status(405).json({ error: { message: `Method ${method} Not Allowed` } });
     }
   } catch (err: any) {
     const { message, statusCode = 500 } = err;
@@ -38,17 +38,17 @@ const handlePATCH = async (req: NextApiRequest, res: NextApiResponse, setupLink:
   const { data: directory } = await directorySyncController.directories.get(directoryId);
 
   if (directory?.tenant !== setupLink.tenant || directory?.product !== setupLink.product) {
-    res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
+    return res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
   }
 
   const { data, error } = await directorySyncController.directories.update(directoryId, { deactivated });
 
   if (data) {
-    res.json({ data: null });
+    return res.json({ data: null });
   }
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 };
 
@@ -61,11 +61,11 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse, setupLink: a
   const { data, error } = await directorySyncController.directories.get(directoryId);
 
   if (data?.tenant !== setupLink.tenant || data?.product !== setupLink.product) {
-    res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
+    return res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
   }
 
   if (data) {
-    res.json({
+    return res.json({
       data: {
         id: data.id,
         type: data.type,
@@ -79,7 +79,7 @@ const handleGET = async (req: NextApiRequest, res: NextApiResponse, setupLink: a
   }
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 };
 
@@ -92,16 +92,16 @@ const handleDELETE = async (req: NextApiRequest, res: NextApiResponse, setupLink
   const { data: directory } = await directorySyncController.directories.get(directoryId);
 
   if (directory?.tenant !== setupLink.tenant || directory?.product !== setupLink.product) {
-    res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
+    return res.status(400).json({ error: { message: 'Tenant/Product mismatch' } });
   }
 
   const { error } = await directorySyncController.directories.delete(directoryId);
 
   if (error) {
-    res.status(error.code).json({ error });
+    return res.status(error.code).json({ error });
   }
 
-  res.json({ data: null });
+  return res.json({ data: null });
 };
 
 export default handler;

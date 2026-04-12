@@ -477,6 +477,7 @@ export interface JacksonOption {
   };
   flattenRawClaims?: boolean;
   jsonErrorPage?: boolean;
+  authnRequestsSigned?: boolean;
 }
 
 export interface SLORequestParams {

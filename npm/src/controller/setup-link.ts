@@ -444,7 +444,7 @@ export class SetupLinkController {
    *               type: array
    *               items:
    *                 $ref: "#/components/schemas/SetupLink"
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   async filterBy(params: FilterByParams): Promise<{ data: SetupLink[]; pageToken?: string }> {
     const { tenant, product, service, pageOffset, pageLimit, pageToken } = params;
@@ -557,7 +557,7 @@ export class SetupLinkController {
    *           application/json:
    *             schema:
    *               $ref: "#/components/schemas/SetupLink"
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   async get(id: string): Promise<SetupLink> {
     if (!id) {

@@ -91,8 +91,41 @@ tap.test('LogoutController -> createRequest', async (t) => {
 
       const params = new URLSearchParams(new URL(result.logoutUrl as string).search);
 
-      t.ok(params.has('SAMLRequest'));
-      t.ok(params.has('RelayState'));
+      t.ok(params.has('SAMLRequest'), 'SAMLRequest present in the query string');
+      t.ok(params.has('RelayState'), 'RelayState present in the query string');
+      t.ok(params.has('SigAlg'), 'SigAlg present in the query string for HTTP-Redirect binding');
+      t.ok(params.has('Signature'), 'Signature present in the query string for HTTP-Redirect binding');
+      t.equal(
+        params.get('SigAlg'),
+        'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+        'SigAlg should be RSA-SHA256'
+      );
+    });
+
+    t.test('HTTP-Redirect logout query string signature should be verifiable', async (t) => {
+      const result = await logoutController.createRequest({
+        ...body,
+        tenant: 'example.com',
+      });
+
+      const params = new URLSearchParams(new URL(result.logoutUrl as string).search);
+
+      const samlRequest = params.get('SAMLRequest')!;
+      const relayState = params.get('RelayState')!;
+      const querySigAlg = params.get('SigAlg')!;
+      const signature = params.get('Signature')!;
+
+      // Reconstruct the signed query string in the canonical order
+      const queryToVerify = `SAMLRequest=${encodeURIComponent(samlRequest)}&RelayState=${encodeURIComponent(relayState)}&SigAlg=${encodeURIComponent(querySigAlg)}`;
+
+      const { getDefaultCertificate } = await import('../../src/saml/x509');
+      const { publicKey } = await getDefaultCertificate();
+
+      const verifier = crypto.createVerify('RSA-SHA256');
+      verifier.update(queryToVerify);
+      const isValid = verifier.verify(publicKey, signature, 'base64');
+
+      t.ok(isValid, 'Query string signature should be verifiable with the public key');
     });
   });
 

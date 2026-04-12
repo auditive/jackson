@@ -139,7 +139,7 @@ class SSOTraces {
    *           application/json:
    *             schema:
    *               $ref: "#/components/schemas/SSOTrace"
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getByTraceId(traceId: string) {
     return (await this.tracesStore.get(traceId)) as Trace;
@@ -203,7 +203,7 @@ class SSOTraces {
    *                  pageToken:
    *                    type: string
    *                    description: token for pagination
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getTracesByProduct(params: GetByProductParams) {
     const { product, pageOffset, pageLimit, pageToken } = params;

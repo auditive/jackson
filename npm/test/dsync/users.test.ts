@@ -142,6 +142,236 @@ tap.test('Directory users /', async (t) => {
       t.equal(data.address.streetAddress, '123 Main St');
     });
 
+    t.test('Should remove custom attributes when PATCH uses op: "remove"', async (t) => {
+      // First, set some custom attributes
+      const { status: setStatus, data: setData } = await directorySync.requests.handle(
+        requests.customAttributes(directory, createdUser.id)
+      );
+
+      t.equal(setStatus, 200);
+      t.equal(setData.companyName, 'Ory');
+      t.equal(setData.address.streetAddress, '123 Main St');
+
+      // Now remove them using op: "remove"
+      const { status, data } = await directorySync.requests.handle(
+        requests.removeCustomAttributes(directory, createdUser.id)
+      );
+
+      t.ok(data);
+      t.equal(status, 200);
+      t.notOk(data.companyName, 'companyName should be removed');
+      t.notOk(data.address?.streetAddress, 'address.streetAddress should be removed');
+
+      // Verify the removal persists when fetching the user
+      const { data: fetchedUser } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.notOk(fetchedUser.companyName, 'companyName should still be removed after re-fetch');
+    });
+
+    t.test('Should remove standard attribute when PATCH uses op: "remove"', async (t) => {
+      // User has title from initial creation data
+      const { data: initialUser } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.equal(initialUser.title, 'Manager', 'user should have title initially');
+
+      // Remove title using op: "remove"
+      const { status, data } = await directorySync.requests.handle(
+        requests.removeTitle(directory, createdUser.id)
+      );
+
+      t.ok(data);
+      t.equal(status, 200);
+      t.notOk(data.title, 'title should be removed');
+    });
+
+    t.test('Should propagate remove op for standard mapped attributes to user model', async (t) => {
+      // Verify user has name fields from initial creation
+      const { data: initialUser } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.equal(initialUser.name.givenName, 'Jackson', 'user should have givenName initially');
+      t.equal(initialUser.name.familyName, 'M', 'user should have familyName initially');
+
+      // Remove name.givenName and name.familyName using op: "remove"
+      const { status, data } = await directorySync.requests.handle(
+        requests.removeStandardMappedAttributes(directory, createdUser.id)
+      );
+
+      t.equal(status, 200);
+      t.notOk(data.name?.givenName, 'givenName should be removed from raw');
+      t.notOk(data.name?.familyName, 'familyName should be removed from raw');
+
+      // Verify the user model fields are cleared via the internal user record
+      const user = await directorySync.users.get(createdUser.id);
+      t.equal(user.data?.first_name, '', 'first_name should be cleared on user model');
+      t.equal(user.data?.last_name, '', 'last_name should be cleared on user model');
+    });
+
+    t.test('Entra: should set and clear extension attributes via no-path object format', async (t) => {
+      // Set extension attributes (Entra no-path format with nested schema object)
+      const { status: setStatus, data: setData } = await directorySync.requests.handle(
+        requests.entraSetExtensionAttribute(directory, createdUser.id)
+      );
+
+      t.equal(setStatus, 200);
+      const extKey = 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User';
+      t.ok(setData[extKey], 'extension schema key should exist in raw');
+      t.equal(setData[extKey].department, 'Engineering', 'department should be set');
+      t.equal(setData[extKey].costCenter, 'CC-1234', 'costCenter should be set');
+
+      // Verify it persists
+      const { data: fetched } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.equal(fetched[extKey].department, 'Engineering', 'department should persist after re-fetch');
+
+      // Now clear via the same format with empty strings
+      const { status: clearStatus, data: clearData } = await directorySync.requests.handle(
+        requests.entraClearExtensionAttribute(directory, createdUser.id)
+      );
+
+      t.equal(clearStatus, 200);
+      t.equal(clearData[extKey].department, '', 'department should be cleared');
+      t.equal(clearData[extKey].costCenter, '', 'costCenter should be cleared');
+
+      // Verify clearing persists
+      const { data: fetchedAfterClear } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.equal(fetchedAfterClear[extKey].department, '', 'department should still be cleared after re-fetch');
+    });
+
+    t.test('Entra: should set and clear extension attribute via path-based format', async (t) => {
+      const extKey = 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User';
+
+      // Set via path format (path = "urn:...:User:department", value = "Sales")
+      const { status: setStatus, data: setData } = await directorySync.requests.handle(
+        requests.entraSetExtensionViaPath(directory, createdUser.id, 'Sales')
+      );
+
+      t.equal(setStatus, 200);
+      // Path-based format splits "urn:...:User:department" into schema URN + attribute
+      t.equal(setData[extKey].department, 'Sales', 'extension attribute should be set via path');
+
+      // Clear via path format with empty string
+      const { status: clearStatus, data: clearData } = await directorySync.requests.handle(
+        requests.entraSetExtensionViaPath(directory, createdUser.id, '')
+      );
+
+      t.equal(clearStatus, 200);
+      t.equal(clearData[extKey].department, '', 'extension attribute should be cleared via path');
+    });
+
+    t.test('Entra: should clear multi-valued attribute by replacing with empty array', async (t) => {
+      // First set phone numbers
+      await directorySync.requests.handle(requests.entraPhoneAndAddress(directory, createdUser.id));
+
+      // Verify they're set
+      const { data: withPhones } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.ok(Array.isArray(withPhones.phoneNumbers), 'phoneNumbers should be set');
+      t.ok(withPhones.phoneNumbers.length > 0, 'phoneNumbers should have entries');
+
+      // Clear by replacing with empty array
+      const { status, data } = await directorySync.requests.handle(
+        requests.entraClearMultiValuedAttribute(directory, createdUser.id)
+      );
+
+      t.equal(status, 200);
+      t.ok(Array.isArray(data.phoneNumbers), 'phoneNumbers should still be an array');
+      t.equal(data.phoneNumbers.length, 0, 'phoneNumbers should be empty after clear');
+    });
+
+    t.test('Entra: should clear filter-path attributes by setting value to empty string', async (t) => {
+      // First set phone numbers and addresses via filter paths
+      await directorySync.requests.handle(requests.entraPhoneAndAddress(directory, createdUser.id));
+
+      // Verify they're set
+      const { data: withData } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      const workPhone = withData.phoneNumbers.find((p: any) => p.type === 'work');
+      t.equal(workPhone.value, '555-0100', 'work phone should be set');
+      const workAddr = withData.addresses.find((a: any) => a.type === 'work');
+      t.equal(workAddr.streetAddress, '100 Enterprise Blvd', 'work address should be set');
+
+      // Clear via filter-path with empty string values
+      const { status, data } = await directorySync.requests.handle(
+        requests.entraClearFilterPathAttributes(directory, createdUser.id)
+      );
+
+      t.equal(status, 200);
+
+      const clearedPhone = data.phoneNumbers.find((p: any) => p.type === 'work');
+      t.equal(clearedPhone.value, '', 'work phone value should be cleared to empty string');
+
+      const clearedAddr = data.addresses.find((a: any) => a.type === 'work');
+      t.equal(clearedAddr.streetAddress, '', 'work address streetAddress should be cleared to empty string');
+    });
+
+    t.test('Should clear custom attributes when PATCH sets them to empty string', async (t) => {
+      // First, set some custom attributes
+      const { status: setStatus, data: setData } = await directorySync.requests.handle(
+        requests.customAttributes(directory, createdUser.id)
+      );
+
+      t.equal(setStatus, 200);
+      t.equal(setData.companyName, 'Ory');
+      t.equal(setData.address.streetAddress, '123 Main St');
+
+      // Now clear them by setting to empty string
+      const { status, data } = await directorySync.requests.handle(
+        requests.clearCustomAttributes(directory, createdUser.id)
+      );
+
+      t.ok(data);
+      t.equal(status, 200);
+      t.equal(data.companyName, '', 'companyName should be cleared to empty string');
+      t.equal(data.address.streetAddress, '', 'address.streetAddress should be cleared to empty string');
+    });
+
+    t.test('Should clear attributes when PATCH uses object value with empty strings', async (t) => {
+      // Verify the user has title and displayName set from initial creation
+      const { data: initialUser } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.ok(initialUser.title || initialUser.displayName, 'user should have title or displayName initially');
+
+      // Clear them via object-style PATCH
+      const { status, data } = await directorySync.requests.handle(
+        requests.clearCustomAttributesViaObject(directory, createdUser.id)
+      );
+
+      t.ok(data);
+      t.equal(status, 200);
+      t.equal(data.title, '', 'title should be cleared to empty string');
+      t.equal(data.displayName, '', 'displayName should be cleared to empty string');
+    });
+
+    t.test('Should clear custom field when PUT omits it', async (t) => {
+      // First set a custom attribute via PATCH
+      await directorySync.requests.handle(requests.customAttributes(directory, createdUser.id));
+
+      // Verify it's set
+      const { data: withCustom } = await directorySync.requests.handle(
+        requests.getById(directory, createdUser.id)
+      );
+      t.equal(withCustom.companyName, 'Ory', 'custom field should be set before PUT');
+
+      // Now PUT the full user without the custom field (simulating Entra removing it)
+      const userWithoutCustomField = { ...users[0] };
+      const { status, data } = await directorySync.requests.handle(
+        requests.updateByIdWithoutCustomField(directory, createdUser.id, userWithoutCustomField)
+      );
+
+      t.ok(data);
+      t.equal(status, 200);
+      t.notOk(data.companyName, 'companyName should not be present after PUT without it');
+    });
+
     t.test('Should be able to update phone numbers and addresses with SCIM filter paths', async (t) => {
       const { status, data } = await directorySync.requests.handle(
         requests.entraPhoneAndAddress(directory, createdUser.id)
@@ -168,6 +398,39 @@ tap.test('Directory users /', async (t) => {
       t.equal(workAddress.postalCode, '94105');
       t.equal(workAddress.country, 'US');
     });
+
+    t.test(
+      'Entra: should remove specific value from extension multi-valued attribute via URN filter path',
+      async (t) => {
+        const extKey = 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User';
+
+        // First, set a multi-valued extension attribute with two roles
+        const { status: setStatus, data: setData } = await directorySync.requests.handle(
+          requests.entraSetExtensionMultiValued(directory, createdUser.id)
+        );
+
+        t.equal(setStatus, 200);
+        t.ok(setData[extKey], 'extension schema key should exist');
+        t.equal(setData[extKey].roles.length, 2, 'should have two roles');
+
+        // Remove only the admin role using URN + filter path
+        const { status, data } = await directorySync.requests.handle(
+          requests.entraRemoveExtensionFilterPath(directory, createdUser.id)
+        );
+
+        t.equal(status, 200);
+        t.ok(data[extKey], 'extension schema key should still exist');
+        t.equal(data[extKey].roles.length, 1, 'should have one role remaining');
+        t.equal(data[extKey].roles[0].value, 'user-role-id', 'only the user role should remain');
+
+        // Verify removal persists
+        const { data: fetched } = await directorySync.requests.handle(
+          requests.getById(directory, createdUser.id)
+        );
+        t.equal(fetched[extKey].roles.length, 1, 'removal should persist after re-fetch');
+        t.equal(fetched[extKey].roles[0].value, 'user-role-id', 'correct role should persist');
+      }
+    );
 
     t.test('Should handle SCIM filter paths for arbitrary attribute names', async (t) => {
       const { status, data } = await directorySync.requests.handle(

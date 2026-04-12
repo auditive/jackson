@@ -539,7 +539,7 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *        $ref: '#/components/responses/400Get'
    *      "401":
    *        $ref: '#/components/responses/401Get'
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getConnections(body: GetConnectionsQuery): Promise<Array<SAMLSSORecord | OIDCSSORecord>> {
     const clientID = 'clientID' in body ? body.clientID : undefined;
@@ -803,7 +803,7 @@ export class ConnectionAPIController implements IConnectionAPIController {
    *        $ref: '#/components/responses/400Get'
    *      '401':
    *        $ref: '#/components/responses/401Get'
-   *     x-ory-ratelimit-bucket: polis-public-low
+   *     x-ory-ratelimit-bucket: polis-public-high
    */
   public async getConnectionsByProduct(
     body: GetByProductParams

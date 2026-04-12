@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import tap from 'tap';
 import path from 'path';
 import sinon from 'sinon';
@@ -79,16 +80,41 @@ tap.test('Federated SAML flow', async (t) => {
         samlBinding: 'HTTP-Redirect',
       });
 
+      const params = new URL(response.redirect_url).searchParams;
+
       // Extract relay state created by Jackson
-      jacksonRelayState = new URL(response.redirect_url).searchParams.get('RelayState');
+      jacksonRelayState = params.get('RelayState');
 
       t.ok(
         response.redirect_url?.startsWith(`${connection.idpMetadata.sso.redirectUrl}`),
         'Should have a SSO URL that starts with IdP SSO URL'
       );
       t.ok(response.redirect_url, 'Should have a redirect URL');
-      t.ok(response.redirect_url?.includes('SAMLRequest'), 'Should have a SAMLRequest in the redirect URL');
-      t.ok(response.redirect_url?.includes('RelayState'), 'Should have a RelayState in the redirect URL');
+      t.ok(params.has('SAMLRequest'), 'Should have a SAMLRequest in the redirect URL');
+      t.ok(params.has('RelayState'), 'Should have a RelayState in the redirect URL');
+      t.ok(params.has('SigAlg'), 'Should have SigAlg in the redirect URL for HTTP-Redirect binding');
+      t.ok(params.has('Signature'), 'Should have Signature in the redirect URL for HTTP-Redirect binding');
+      t.equal(
+        params.get('SigAlg'),
+        'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+        'SigAlg should be RSA-SHA256'
+      );
+
+      // Verify the query string signature
+      const samlRequest = params.get('SAMLRequest')!;
+      const relayState = params.get('RelayState')!;
+      const querySigAlg = params.get('SigAlg')!;
+      const signature = params.get('Signature')!;
+      const queryToVerify = `SAMLRequest=${encodeURIComponent(samlRequest)}&RelayState=${encodeURIComponent(relayState)}&SigAlg=${encodeURIComponent(querySigAlg)}`;
+
+      const { getDefaultCertificate } = await import('../../src/saml/x509');
+      const { publicKey } = await getDefaultCertificate();
+
+      const verifier = crypto.createVerify('RSA-SHA256');
+      verifier.update(queryToVerify);
+      const isValid = verifier.verify(publicKey, signature, 'base64');
+
+      t.ok(isValid, 'Query string signature should be verifiable with the public key');
     });
 
     t.test('Should be able to accept SAML Response from IdP and generate SAML Response for SP', async (t) => {

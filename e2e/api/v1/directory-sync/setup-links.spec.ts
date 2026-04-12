@@ -129,6 +129,47 @@ test('delete the setup link by id', async ({ request }) => {
   expect(response.status()).toBe(404);
 });
 
+// GET /api/v1/dsync/setuplinks?id={id}&tenant={tenant}&product={product}
+// Regression: passing both id and tenant+product params must not cause a double response.
+test('get the setup link with both id and tenant+product params returns single response', async ({
+  request,
+}) => {
+  const tenant = 'tenant-double-response';
+  const product = 'product-double-response';
+
+  // Create a dedicated setup link for this test
+  const createResponse = await request.post('/api/v1/dsync/setuplinks', {
+    data: {
+      tenant,
+      product,
+      webhook_url: 'http://localhost:3000/webhook',
+      webhook_secret: 'webhook-secret',
+    },
+  });
+
+  expect(createResponse.status()).toBe(201);
+  const { data: setupLink } = await createResponse.json();
+
+  const response = await request.get('/api/v1/dsync/setuplinks', {
+    params: {
+      id: setupLink.setupID,
+      tenant,
+      product,
+    },
+  });
+
+  expect(response.ok()).toBe(true);
+  expect(response.status()).toBe(200);
+
+  const body = await response.json();
+  expect(body.data.setupID).toBe(setupLink.setupID);
+  expect(body.data.tenant).toBe(tenant);
+  expect(body.data.product).toBe(product);
+
+  // Cleanup
+  await request.delete('/api/v1/dsync/setuplinks', { params: { id: setupLink.setupID } });
+});
+
 // GET /api/v1/dsync/setuplinks/product
 test('get the setup links by product', async ({ request }) => {
   // Create 2 setup links
