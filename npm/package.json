@@ -36,36 +36,36 @@
     "db:migration:run:mssql": "cross-env DB_TYPE=mssql DB_URL='sqlserver://localhost:1433;database=master;username=sa;password=123ABabc!' ts-node --transpile-only ../node_modules/typeorm/cli.js migration:run -d typeorm.ts",
     "db:migration:run:sqlite": "cross-env DB_TYPE=sqlite DB_URL='file:///tmp/migration-sqlite.db' ts-node --transpile-only ../node_modules/typeorm/cli.js migration:run -d typeorm.ts",
     "prepublishOnly": "npm run build",
-    "test": "cross-env BOXYHQ_NO_ANALYTICS=1 tap --timeout=300 --allow-incomplete-coverage --allow-empty-coverage --bail test/**/*.test.ts",
+    "test": "cross-env POLIS_NO_ANALYTICS=1 tap --timeout=300 --allow-incomplete-coverage --allow-empty-coverage --bail test/**/*.test.ts",
     "sort": "npx sort-package-json"
   },
   "tap": {
     "coverage-map": "map.js"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.1025.0",
-    "@aws-sdk/credential-providers": "3.1025.0",
+    "@aws-sdk/client-dynamodb": "3.1043.0",
+    "@aws-sdk/credential-providers": "3.1043.0",
     "@aws-sdk/util-dynamodb": "3.996.2",
     "@boxyhq/error-code-mnemonic": "0.1.1",
-    "@boxyhq/metrics": "0.2.12",
-    "@boxyhq/saml20": "1.15.0",
+    "@boxyhq/metrics": "0.2.13",
+    "@boxyhq/saml20": "1.15.2",
     "@googleapis/admin": "30.3.0",
-    "axios": "1.15.0",
+    "axios": "1.15.2",
     "encoding": "0.1.13",
-    "ipaddr.js": "2.3.0",
-    "jose": "6.2.2",
+    "ipaddr.js": "2.4.0",
+    "jose": "6.2.3",
     "lodash": "4.18.1",
-    "mixpanel": "0.20.0",
-    "mongodb": "7.1.1",
-    "mssql": "12.2.1",
-    "mysql2": "3.20.0",
+    "mixpanel": "0.22.0",
+    "mongodb": "7.2.0",
+    "mssql": "12.5.2",
+    "mysql2": "3.22.3",
     "node-forge": "1.4.0",
-    "openid-client": "6.8.2",
+    "openid-client": "6.8.4",
     "pg": "8.20.0",
     "redis": "4.7.1",
     "reflect-metadata": "0.2.2",
     "ripemd160": "2.0.3",
-    "better-sqlite3": "12.8.0",
+    "better-sqlite3": "12.9.0",
     "typeorm": "0.3.28"
   },
   "devDependencies": {
@@ -75,9 +75,9 @@
     "@types/sinon": "21.0.1",
     "cross-env": "10.1.0",
     "migrate-mongo": "14.0.7",
-    "nock": "14.0.12",
-    "sinon": "21.0.3",
-    "tap": "21.6.3",
+    "nock": "14.0.14",
+    "sinon": "21.1.2",
+    "tap": "21.7.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3"
@@ -88,13 +88,18 @@
   },
   "overrides": {
     "tap": {
-      "tar": ">=7.5.11",
-      "glob": ">=11.1.0"
+      "tar": "7.5.14",
+      "glob": "13.0.6"
     },
     "typeorm": {
-      "mongodb": ">=7.0.0",
-      "mssql": ">=12.1.0",
-      "glob": ">=11.1.0"
-    }
+      "mongodb": "7.2.0",
+      "mssql": "12.5.2",
+      "glob": "13.0.6"
+    },
+    "uuid": "14.0.0",
+    "picomatch": "4.0.4",
+    "minimatch": "10.2.5",
+    "brace-expansion": "5.0.5",
+    "tar": "7.5.14"
   }
 }

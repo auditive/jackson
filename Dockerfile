@@ -1,4 +1,4 @@
-ARG NODEJS_IMAGE=node:24.14.1-alpine3.23
+ARG NODEJS_IMAGE=node:24.15.0-alpine3.23
 FROM $NODEJS_IMAGE AS base
 
 # Install dependencies only when needed
@@ -66,8 +66,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/migrate.sh ./migrate.sh
 COPY npm npm
 RUN chmod +x migrate.sh
-# mongodb peer dependency would be automatically installed for migrate-mongo
-RUN npm install -g ts-node migrate-mongo typeorm reflect-metadata mssql mysql2 pg
+# Pin npm to a patched version so the bundled npm CLI no longer ships
+# vulnerable transitive deps (picomatch, minimatch, brace-expansion, tar).
+RUN npm install -g npm@11.13.0
+# Install migration tools from a checked-in package.json + lockfile so npm
+# overrides apply to transitive dependencies (e.g., uuid in typeorm/mssql)
+# and the install is reproducible. migrate.sh resolves them via
+# MIGRATE_DEPS_DIR/NODE_PATH.
+COPY migrate-deps /opt/migrate-deps
+RUN cd /opt/migrate-deps && \
+    npm ci --ignore-scripts && \
+    ln -sf /opt/migrate-deps/node_modules/.bin/ts-node /usr/local/bin/ts-node && \
+    ln -sf /opt/migrate-deps/node_modules/.bin/migrate-mongo /usr/local/bin/migrate-mongo && \
+    ln -sf /opt/migrate-deps/node_modules/.bin/typeorm /usr/local/bin/typeorm
+ENV MIGRATE_DEPS_DIR=/opt/migrate-deps/node_modules
+ENV NODE_PATH=/opt/migrate-deps/node_modules
 USER nextjs
 
 EXPOSE 5225

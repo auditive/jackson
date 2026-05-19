@@ -1,7 +1,10 @@
 #!/bin/sh
 
 echo "Initiating Migration..."
-export NODE_PATH=$(npm root -g)
+# NODE_PATH may be a colon-separated search path. MIGRATE_DEPS_DIR points to
+# a single node_modules root that hosts the typeorm CLI we shell out to.
+export NODE_PATH=${NODE_PATH:-$(npm root -g)}
+MIGRATE_DEPS_DIR=${MIGRATE_DEPS_DIR:-$(npm root -g)}
 
 cd ./npm
 if [ "$DB_ENGINE" = "mongo" ]
@@ -10,9 +13,9 @@ then
 else
     if [ "$1" = "revert" ]
     then
-        ts-node --transpile-only --project tsconfig.json $NODE_PATH/typeorm/cli.js migration:revert -d ./typeorm.ts
+        ts-node --transpile-only --project tsconfig.json "$MIGRATE_DEPS_DIR/typeorm/cli.js" migration:revert -d ./typeorm.ts
     else
-        ts-node --transpile-only --project tsconfig.json $NODE_PATH/typeorm/cli.js migration:run -d ./typeorm.ts
+        ts-node --transpile-only --project tsconfig.json "$MIGRATE_DEPS_DIR/typeorm/cli.js" migration:run -d ./typeorm.ts
     fi
 fi
 if [ $? -eq 1 ]

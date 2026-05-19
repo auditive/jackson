@@ -16,7 +16,7 @@ services:
     image: boxyhq/jackson:1.52.2
     restart: always
     environment:
-      - JACKSON_API_KEYS=secret
+      - API_KEYS=secret
       - DB_URL=postgres://postgres:postgres@postgres:5432/postgres
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
@@ -32,7 +32,7 @@ services:
       - OPENID_RSA_PUBLIC_KEY=${OPENID_RSA_PUBLIC_KEY}
       - DSYNC_GOOGLE_CLIENT_ID=${DSYNC_GOOGLE_CLIENT_ID}
       - DSYNC_GOOGLE_CLIENT_SECRET=${DSYNC_GOOGLE_CLIENT_SECRET}
-      - BOXYHQ_LICENSE_KEY=${BOXYHQ_LICENSE_KEY}
+      - POLIS_LICENSE_KEY=${POLIS_LICENSE_KEY}
     networks:
       - jackson
     ports:

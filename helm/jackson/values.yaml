@@ -17,7 +17,7 @@ jackson:
         cpu: 500m
       requests:
         cpu: 100m
-  jacksonApiKeys: secret
+  apiKeys: secret
   nextauthSecret: secret
   nextauthUrl: http://localhost:5225
   ports:

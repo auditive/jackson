@@ -40,7 +40,7 @@ export const redirect = (
         return true;
       }
 
-      return false;
+      continue;
     }
 
     if (rUrl.protocol === url.protocol && hostNameAllowed === hostname && rUrl.port === url.port) {
